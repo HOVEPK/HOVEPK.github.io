@@ -62,6 +62,19 @@ incrementButton.addEventListener('click', function() {
     counter++;
     counterElement.textContent = counter;
 });
-    </script>
+    <script>
+    let counter = parseInt(localStorage.getItem('clicks') || '0');
+
+    function incrementCounter() {
+        counter++;
+        localStorage.setItem('clicks', counter); 
+        document.getElementById('counterValue').innerHTML = counter;
+    }
+
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('counterValue').textContent = counter;
+    });
+</script>
 </body>
 </html>
