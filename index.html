@@ -11,70 +11,61 @@
         <img src="https://i.pinimg.com/originals/e3/d3/9e/e3d39e036f6e239ec714d45519f8e105.jpg" alt="Simb coin">
     </button>
 
-
-
-
     <style>
         html{
-    background-color: black;
-}
-#incrementButton {
-    background-color: transparent;
-    border: none;
-    padding: 0;
-}
+            background-color: black;
+        }
+        #incrementButton {
+            background-color: transparent;
+            border: none;
+            padding: 0;
+        }
 
-#incrementButton img {
-    width: 200px;
-    height: 200px;
-}
+        #incrementButton img {
+            width: 200px;
+            height: 200px;
+        }
 
-#incrementButton:active img {
-    animation: buttonClick 0.1s linear;
-}
+        #incrementButton:active img {
+            animation: buttonClick 0.1s linear;
+        }
 
-@keyframes buttonClick {
-    0% { transform: scale(1); }
-    50% { transform: scale(0.9); }
-    100% { transform: scale(1); }
-}
-p{
-    color: white;
-    font-size: xx-large;
-    font-family: Arial, Helvetica, sans-serif;
-}
-a{
-    color: firebrick;
-}
-h3{
-    color: cyan;
-}
-h2{
-    color: cyan;
-}
+        @keyframes buttonClick {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+
+        p {
+            color: white;
+            font-size: xx-large;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        a {
+            color: firebrick;
+        }
+
+        h3 {
+            color: cyan;
+        }
+
+        h2 {
+            color: cyan;
+        }
     </style>
+
     <script>
-        let counter = 0;
-const counterElement = document.getElementById('counter');
-const incrementButton = document.getElementById('incrementButton');
+        let counter = parseInt(localStorage.getItem('counter')) || 0;
+        const counterElement = document.getElementById('counter');
+        counterElement.textContent = counter;
 
-incrementButton.addEventListener('click', function() {
-    counter++;
-    counterElement.textContent = counter;
-});
-    <script>
-    let counter = parseInt(localStorage.getItem('clicks') || '0');
-
-    function incrementCounter() {
-        counter++;
-        localStorage.setItem('clicks', counter); 
-        document.getElementById('counterValue').innerHTML = counter;
-    }
-
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('counterValue').textContent = counter;
-    });
-</script>
+        const incrementButton = document.getElementById('incrementButton');
+        incrementButton.addEventListener('click', function() {
+            counter++;
+            localStorage.setItem('counter', counter);
+            counterElement.textContent = counter;
+        });
+    </script>
 </body>
 </html>
