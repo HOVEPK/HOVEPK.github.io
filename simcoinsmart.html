@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simb coin</title>
+</head>
+<body>
+    <p id="counter">0</p>
+    <button id="incrementButton">
+        <img src="https://i.pinimg.com/originals/e3/d3/9e/e3d39e036f6e239ec714d45519f8e105.jpg" alt="Simb coin">
+    </button>
+
+
+
+
+    <style>
+        html{
+    background-color: black;
+}
+#incrementButton {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+}
+
+#incrementButton img {
+    width: 200px;
+    height: 200px;
+}
+
+#incrementButton:active img {
+    animation: buttonClick 0.1s linear;
+}
+
+@keyframes buttonClick {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+p{
+    color: white;
+    font-size: xx-large;
+    font-family: Arial, Helvetica, sans-serif;
+}
+a{
+    color: firebrick;
+}
+h3{
+    color: cyan;
+}
+h2{
+    color: cyan;
+}
+    </style>
+    <script>
+        let counter = 0;
+const counterElement = document.getElementById('counter');
+const incrementButton = document.getElementById('incrementButton');
+
+incrementButton.addEventListener('click', function() {
+    counter++;
+    counterElement.textContent = counter;
+});
+    </script>
+</body>
+</html>
