@@ -4,56 +4,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simb coin</title>
-</head>
-<body>
-    <p id="counter">0</p>
-    <button id="incrementButton">
-        <img src="https://i.pinimg.com/originals/e3/d3/9e/e3d39e036f6e239ec714d45519f8e105.jpg" alt="Simb coin">
-    </button>
-
     <style>
-        html{
+        html, body {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             background-color: black;
+            overflow: hidden; /* Предотвращает появление полос прокрутки */
+        }
+        #container {
+            text-align: center;
         }
         #incrementButton {
             background-color: transparent;
             border: none;
             padding: 0;
         }
-
         #incrementButton img {
-            width: 200px;
-            height: 200px;
+            width: 300px; /* Размер кнопки */
+            height: 300px;
         }
-
         #incrementButton:active img {
             animation: buttonClick 0.1s linear;
         }
-
         @keyframes buttonClick {
             0% { transform: scale(1); }
             50% { transform: scale(0.9); }
             100% { transform: scale(1); }
         }
-
+        .coin {
+            position: absolute;
+            font-size: 20px;
+            color: white;
+            font-family: Arial, Helvetica, sans-serif;
+            animation: floatUp 2s ease-out forwards;
+            pointer-events: none;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-100px); }
+        }
         p {
             color: white;
-            font-size: xx-large;
+            font-size: 50px; /* Размер шрифта */
             font-family: Arial, Helvetica, sans-serif;
-        }
-
-        a {
-            color: firebrick;
-        }
-
-        h3 {
-            color: cyan;
-        }
-
-        h2 {
-            color: cyan;
+            margin: 0;
+            margin-bottom: -30px; /* Отступ снизу */
         }
     </style>
+</head>
+<body>
+    <div id="container">
+        <img id="customImage" src="https://i.postimg.cc/hGCz2jyp/Picsart-24-07-12-22-23-01-900.png" alt="Custom Image" style="width: 50px; margin-bottom: -55px; margin-left: -200px">
+        <p id="counter">0</p>
+        <button id="incrementButton">
+            <img src="https://i.postimg.cc/vTpLxWZk/273-20240623004142.png" alt="Simb coin">
+        </button>
+    </div>
 
     <script>
         let counter = parseInt(localStorage.getItem('counter')) || 0;
@@ -61,10 +70,23 @@
         counterElement.textContent = counter;
 
         const incrementButton = document.getElementById('incrementButton');
-        incrementButton.addEventListener('click', function() {
+        incrementButton.addEventListener('click', function(event) {
             counter++;
             localStorage.setItem('counter', counter);
             counterElement.textContent = counter;
+
+            // Создаем и добавляем анимационную монетку
+            const coin = document.createElement('div');
+            coin.className = 'coin';
+            coin.style.left = `${event.clientX}px`;
+            coin.style.top = `${event.clientY}px`;
+            coin.textContent = '+1';
+            document.body.appendChild(coin);
+
+            // Удаляем монетку после завершения анимации
+            coin.addEventListener('animationend', () => {
+                document.body.removeChild(coin);
+            });
         });
     </script>
 </body>
