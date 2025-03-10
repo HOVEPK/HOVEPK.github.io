@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -79,15 +79,4 @@
             const coin = document.createElement('div');
             coin.className = 'coin';
             coin.style.left = `${event.clientX}px`;
-            coin.style.top = `${event.clientY}px`;
-            coin.textContent = '+1';
-            document.body.appendChild(coin);
-
-            // Удаляем монетку после завершения анимации
-            coin.addEventListener('animationend', () => {
-                document.body.removeChild(coin);
-            });
-        });
-    </script>
-</body>
-</html>
+            coin.style.top = `${event.clien
