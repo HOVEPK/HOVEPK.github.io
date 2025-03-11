@@ -38,7 +38,7 @@
                 document.getElementById("text").textContent = texts[index];
                 clickCount++;
             } else {
-                sound.loop = true; // Включает бесконечное воспроизведение
+                sound.loop = true; // Бесконечное воспроизведение
                 sound.play().catch(error => console.log("Ошибка автозапуска:", error));
             }
         }
