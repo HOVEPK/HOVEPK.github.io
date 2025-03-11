@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тимофей</title>
+    <title>Лохи</title>
     <style>
         body {
             margin: 0;
@@ -18,15 +18,38 @@
             text-transform: uppercase;
             text-align: center;
             cursor: pointer;
+            flex-direction: column;
+        }
+        iframe {
+            display: none;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body onclick="changeText()">
     <div id="text">Тимофей лох</div>
+    <iframe id="sound" width="110" height="200" src="https://www.myinstants.com/instant/zhestokie-stony-82280/embed/" frameborder="0" scrolling="no"></iframe>
 
     <script>
         const texts = ["Кирилл лох", "Макар лох", "Макс лох", "Витя лох"];
         let index = 0;
+        let clickCount = 0;
+        let soundPlaying = false;
 
         function changeText() {
-            index = (index
+            if (clickCount < 3) {
+                index = (index + 1) % texts.length;
+                document.getElementById("text").textContent = texts[index];
+                clickCount++;
+            } else if (!soundPlaying) {
+                let iframe = document.getElementById("sound");
+                iframe.style.display = "block";
+                soundPlaying = true;
+                setInterval(() => {
+                    iframe.src = iframe.src; // Перезагружает iframe для бесконечного звука
+                }, 2000);
+            }
+        }
+    </script>
+</body>
+</html>
