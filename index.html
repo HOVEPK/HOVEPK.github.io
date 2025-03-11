@@ -16,10 +16,22 @@
             font-size: 5rem;
             font-family: Arial, sans-serif;
             text-transform: uppercase;
+            text-align: center;
+            cursor: pointer;
         }
     </style>
 </head>
-<body>
-    Тимофей лох
+<body onclick="changeText()">
+    <div id="text">Тимофей лох</div>
+
+    <script>
+        const texts = ["Кирилл лох", "Макар лох", "Макс лох", "Витя лох"];
+        let index = 0;
+
+        function changeText() {
+            index = (index + 1) % texts.length;
+            document.getElementById("text").textContent = texts[index];
+        }
+    </script>
 </body>
 </html>
