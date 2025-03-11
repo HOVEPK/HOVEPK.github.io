@@ -20,34 +20,26 @@
             cursor: pointer;
             flex-direction: column;
         }
-        iframe {
-            display: none;
-            margin-top: 20px;
-        }
     </style>
 </head>
 <body onclick="changeText()">
     <div id="text">Тимофей лох</div>
-    <iframe id="sound" width="110" height="200" src="https://www.myinstants.com/instant/zhestokie-stony-82280/embed/" frameborder="0" scrolling="no"></iframe>
+    <audio id="sound" src="https://www.myinstants.com/media/sounds/zhestokie-stony.mp3"></audio>
 
     <script>
         const texts = ["Кирилл лох", "Макар лох", "Макс лох", "Витя лох"];
         let index = 0;
         let clickCount = 0;
-        let soundPlaying = false;
+        let sound = document.getElementById("sound");
 
         function changeText() {
             if (clickCount < 3) {
                 index = (index + 1) % texts.length;
                 document.getElementById("text").textContent = texts[index];
                 clickCount++;
-            } else if (!soundPlaying) {
-                let iframe = document.getElementById("sound");
-                iframe.style.display = "block";
-                soundPlaying = true;
-                setInterval(() => {
-                    iframe.src = iframe.src; // Перезагружает iframe для бесконечного звука
-                }, 2000);
+            } else {
+                sound.loop = true; // Включает бесконечное воспроизведение
+                sound.play().catch(error => console.log("Ошибка автозапуска:", error));
             }
         }
     </script>
