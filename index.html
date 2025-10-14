@@ -1,107 +1,251 @@
-
-<!DOCTYPE html>
-<html lang="ru">
+<!doctype html>
+<html lang="uk">
 <head>
-  <meta charset="UTF-8">
-  <title>Калькулятор</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>БЕЗКОШТОВНИЙ ВАЙФАЙ + ЗАВИСАННЯ</title>
   <style>
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background: #f0f0f0;
-      font-family: Arial, sans-serif;
+    :root{
+      --bg:#0b0f1a;
+      --panel:#111622;
+      --accent:#ff5e5e;
+      --glass: rgba(255,255,255,0.04);
     }
-    .calculator {
-      background: #fff;
-      padding: 20px;
-      border-radius: 15px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+    body{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:
+        radial-gradient(1200px 600px at 10% 10%, rgba(100,120,255,0.07), transparent),
+        radial-gradient(800px 400px at 90% 90%, rgba(255,80,120,0.03), transparent),
+        var(--bg);
+      color:#e6eef8;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
     }
-    #display {
-      width: 100%;
-      height: 50px;
-      font-size: 22px;
-      margin-bottom: 10px;
-      text-align: right;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 10px;
+
+    .card{
+      width:min(820px,94vw);
+      background:linear-gradient(180deg,var(--panel), rgba(15,20,30,0.9));
+      border-radius:16px;
+      padding:40px;
+      box-shadow: 0 12px 40px rgba(3,6,12,0.6);
+      position:relative;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,0.03);
+      text-align:center;
     }
-    .buttons {
-      display: grid;
-      grid-template-columns: repeat(4, 70px);
-      gap: 10px;
+
+    h1{
+      margin:0 0 8px 0;
+      font-size:28px;
+      letter-spacing:0.6px;
     }
-    button {
-      height: 50px;
-      font-size: 20px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      background: #eee;
-      transition: 0.2s;
+    p.lead{
+      margin:0 0 22px 0;
+      color:#bcd2ff;
+      opacity:0.8;
     }
-    button:hover {
-      background: #ddd;
+
+    .big-text{
+      display:inline-block;
+      background:linear-gradient(90deg,#fff,#cfe3ff);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+      font-weight:800;
+      font-size:44px;
+      line-height:1;
+      margin:10px 0 22px 0;
     }
-    .equal {
-      background: #4CAF50;
-      color: #fff;
-      grid-column: span 2;
+
+    .btn{
+      appearance:none;
+      border:0;
+      padding:14px 22px;
+      border-radius:10px;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow: 0 6px 18px rgba(20,30,60,0.45);
+      background:linear-gradient(180deg,var(--accent), #d94a4a);
+      color:#111;
+      font-size:16px;
+      transition: transform .12s ease;
     }
-    .equal:hover {
-      background: #45a049;
+    .btn:active{transform:translateY(1px) scale(.997);}
+
+    .hint{
+      margin-top:14px;
+      color:#9fb0ff;
+      font-size:13px;
+      opacity:0.9;
+    }
+
+    /* overlay "зависання" */
+    .freeze-overlay{
+      position:fixed;
+      inset:0;
+      backdrop-filter: blur(3px);
+      background: linear-gradient(180deg, rgba(5,7,10,0.6), rgba(0,0,0,0.85));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+      flex-direction:column;
+      gap:18px;
+      pointer-events:auto;
+    }
+    .freeze-box{
+      width:min(640px,92%);
+      padding:30px;
+      border-radius:12px;
+      background:rgba(6,10,18,0.86);
+      border:1px solid rgba(255,255,255,0.03);
+      text-align:center;
+      box-shadow:0 18px 80px rgba(0,0,0,0.7);
+    }
+    .freeze-title{
+      font-size:20px;
+      font-weight:800;
+      letter-spacing:0.6px;
+      color:#ffd7d7;
+    }
+    .freeze-sub{
+      margin-top:6px;
+      color:#c9d8ff;
+      opacity:0.9;
+    }
+
+    /* "glitch" lines to hint freeze */
+    .glitch {
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      mix-blend-mode:screen;
+      background-image: linear-gradient(transparent 70%, rgba(255,255,255,0.03) 71%, transparent 72%);
+      background-size:100% 6px;
+      animation: jitter 0.8s steps(2) infinite;
+      opacity:0.6;
+    }
+    @keyframes jitter {
+      0%{transform:translateY(0)}
+      50%{transform:translateY(2px)}
+      100%{transform:translateY(0)}
+    }
+
+    /* small clause for disabling scroll when frozen */
+    body.frozen{
+      overflow:hidden;
+      touch-action:none;
+      -webkit-overflow-scrolling: none;
+    }
+    @media (max-width:520px){
+      .big-text{font-size:32px}
+      .card{padding:22px}
+      .freeze-box{padding:18px}
     }
   </style>
 </head>
 <body>
-  <div class="calculator">
-    <input type="text" id="display" disabled>
-    <div class="buttons">
-      <button onclick="clearDisplay()">C</button>
-      <button onclick="appendValue('/')">÷</button>
-      <button onclick="appendValue('*')">×</button>
-      <button onclick="appendValue('-')">−</button>
+  <div class="card" id="app">
+    <div class="glitch" aria-hidden="true"></div>
 
-      <button onclick="appendValue('7')">7</button>
-      <button onclick="appendValue('8')">8</button>
-      <button onclick="appendValue('9')">9</button>
-      <button onclick="appendValue('+')">+</button>
+    <h1>Відкрити мережу</h1>
+    <p class="lead">Це сторінка-жарт: натисни кнопку, щоб отримати <strong>«бесплатний вайфай + зависання»</strong>.</p>
 
-      <button onclick="appendValue('4')">4</button>
-      <button onclick="appendValue('5')">5</button>
-      <button onclick="appendValue('6')">6</button>
-      <button onclick="calculate()">=</button>
+    <div class="big-text">БЕСПЛАТНЫЙ ВАЙФАЙ + ЗАВИСАНИЕ</div>
 
-      <button onclick="appendValue('1')">1</button>
-      <button onclick="appendValue('2')">2</button>
-      <button onclick="appendValue('3')">3</button>
-      <button onclick="appendValue('.')">.</button>
-
-      <button onclick="appendValue('0')" style="grid-column: span 2;">0</button>
+    <div style="margin-top:26px;">
+      <button class="btn" id="freezeBtn">Натисни мене — зависнути 📵</button>
     </div>
+
+    <div class="hint">Порада: щоб звук точно пролунав — поклади mp3 з іменем <code>ston.mp3</code> у ту саму папку, що і цей файл. Інакше відкриється сторінка myinstants у новій вкладці.</div>
   </div>
 
   <script>
-    let display = document.getElementById("display");
+    (function(){
+      const freezeBtn = document.getElementById('freezeBtn');
+      const myinstantsUrl = 'https://www.myinstants.com/ru/instant/ochen-zhiostkii-ston-iakovliva-79757/?utm_source=copy&utm_medium=share';
+      // Локальний файл — найкращий варіант. Якщо хочеш, заміни 'ston.mp3' на іншу назву.
+      const localAudioPath = 'ston.mp3';
 
-    function appendValue(value) {
-      display.value += value;
-    }
+      function createOverlay(){
+        const overlay = document.createElement('div');
+        overlay.className = 'freeze-overlay';
+        overlay.innerHTML = `
+          <div class="freeze-box">
+            <div class="freeze-title">Телефон завис</div>
+            <div class="freeze-sub">Щоб вийти — оновіть сторінку або натисніть кнопку "Розморозити".</div>
+            <div style="margin-top:16px;">
+              <button id="unfreeze" class="btn" style="background:linear-gradient(180deg,#6ecb6e,#3fb63f);">Розморозити</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+        // disable interactions with page behind overlay
+        document.documentElement.classList.add('frozen');
 
-    function clearDisplay() {
-      display.value = "";
-    }
+        // розморозити по кнопці
+        overlay.querySelector('#unfreeze').addEventListener('click', ()=> {
+          overlay.remove();
+          document.documentElement.classList.remove('frozen');
+          // зупиняємо всі звуки
+          document.querySelectorAll('audio').forEach(a=>{a.pause(); a.currentTime=0;});
+        }, {once:true});
 
-    function calculate() {
-      try {
-        display.value = eval(display.value);
-      } catch {
-        display.value = "Ошибка";
+        return overlay;
       }
-    }
+
+      async function tryPlayLocalThenFallback(){
+        // Спробуємо створити аудіо з локального файлу
+        try{
+          const audio = new Audio(localAudioPath);
+          audio.loop = false;
+          // поставить спробу відтворити — якщо файл не знайдено, спрацює catch або помилка відтоку
+          await audio.play();
+          // Створимо елемент у DOM, щоб браузер не видалив його під час переходів
+          audio.style.display = 'none';
+          document.body.appendChild(audio);
+          // коли звук закінчиться — залишаємо оверлей; користувач має натиснути Розморозити
+          audio.addEventListener('ended', ()=>{/* нічого */});
+          return true;
+        }catch(e){
+          // локальний файл не доступний або браузер не дозволив відтворення
+          return false;
+        }
+      }
+
+      freezeBtn.addEventListener('click', async (ev)=>{
+        // Натиск — користувацька дія, попапи дозволені у багатьох браузерах.
+        // Одразу накриваємо екран (імітація зависання)
+        createOverlay();
+
+        // Спробуємо програти локальний mp3
+        const ok = await tryPlayLocalThenFallback();
+        if(!ok){
+          // Якщо локального не має — відкриємо myinstants у новій вкладці
+          try{
+            window.open(myinstantsUrl, '_blank');
+          }catch(e){
+            // нічого — якщо заблоковано, додамо посилання в нижню частину сторінки
+            const hint = document.createElement('div');
+            hint.style.position='fixed';
+            hint.style.bottom='12px';
+            hint.style.left='50%';
+            hint.style.transform='translateX(-50%)';
+            hint.style.background='rgba(0,0,0,0.6)';
+            hint.style.color='#fff';
+            hint.style.padding='8px 12px';
+            hint.style.borderRadius='8px';
+            hint.style.fontSize='13px';
+            hint.textContent = 'Відкрий вручну: ' + myinstantsUrl;
+            document.body.appendChild(hint);
+            setTimeout(()=>hint.remove(), 12000);
+          }
+        }
+      });
+    })();
   </script>
 </body>
 </html>
