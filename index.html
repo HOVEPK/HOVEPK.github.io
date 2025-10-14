@@ -8,96 +8,155 @@
     html,body{
       height:100%;margin:0;
       font-family:"Poppins",system-ui,sans-serif;
-      background:radial-gradient(circle at 50% 20%,#222842,#0b0f1a 70%);
-      color:#fff;
+      background:radial-gradient(circle at 50% 20%,#1a1f3c,#07090f 80%);
+      color:#fff;overflow:hidden;
       display:flex;align-items:center;justify-content:center;
-      overflow:hidden;
     }
+
     .container{
       text-align:center;
-      backdrop-filter:blur(20px);
-      background:rgba(255,255,255,0.04);
-      border:1px solid rgba(255,255,255,0.08);
+      padding:60px 70px;
       border-radius:24px;
-      padding:50px 60px;
-      box-shadow:0 0 80px rgba(0,0,0,0.5);
+      background:rgba(255,255,255,0.03);
+      backdrop-filter:blur(18px);
+      border:1px solid rgba(255,255,255,0.05);
+      box-shadow:0 0 120px rgba(90,120,255,0.15);
       animation:fadeIn 1s ease forwards;
+      position:relative;
+      overflow:hidden;
     }
+
     h1{
       font-size:42px;
-      font-weight:800;
-      margin-bottom:20px;
-      background:linear-gradient(90deg,#79c7ff,#ffffff);
+      font-weight:900;
+      margin-bottom:30px;
+      letter-spacing:1px;
+      background:linear-gradient(90deg,#7df,#ff9ee5);
       -webkit-background-clip:text;
       color:transparent;
-      letter-spacing:1px;
+      text-shadow:0 0 20px rgba(255,255,255,0.1);
     }
+
     .btn{
-      background:linear-gradient(135deg,#ff6262,#ff2e9f);
-      color:#fff;
+      background:linear-gradient(135deg,#ff6e6e,#ff2fc9);
       border:none;
-      padding:18px 40px;
-      border-radius:12px;
-      font-size:18px;
+      color:#fff;
+      padding:18px 46px;
+      border-radius:14px;
+      font-size:20px;
       font-weight:700;
       cursor:pointer;
-      box-shadow:0 10px 40px rgba(255,60,100,0.4);
-      transition:transform .2s,box-shadow .2s;
+      box-shadow:0 10px 40px rgba(255,70,120,0.4);
+      transition:transform .2s,box-shadow .3s;
     }
-    .btn:hover{transform:translateY(-3px);box-shadow:0 14px 50px rgba(255,60,100,0.55);}
+    .btn:hover{transform:translateY(-3px) scale(1.05);box-shadow:0 16px 60px rgba(255,70,120,0.6);}
+    .btn:active{transform:scale(.97);}
+
+    /* --- overlay "freeze" --- */
     .overlay{
       position:fixed;inset:0;
-      background:rgba(5,5,10,0.95);
-      backdrop-filter:blur(3px);
+      background:#000;
       display:flex;align-items:center;justify-content:center;
-      flex-direction:column;
-      z-index:100;
       opacity:0;pointer-events:none;
-      transition:opacity .6s ease;
+      z-index:100;
+      transition:opacity .5s ease;
+      overflow:hidden;
     }
     .overlay.active{opacity:1;pointer-events:auto;}
-    .freeze-text{
-      font-size:32px;font-weight:700;
-      color:#ff8a8a;
-      animation:blink 1.4s steps(2) infinite;
+    
+    /* глітч ефект */
+    .glitch-lines{
+      position:absolute;
+      inset:0;
+      background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 3px);
+      mix-blend-mode:screen;
+      animation:moveLines 1s steps(2) infinite;
+      opacity:.4;
     }
-    @keyframes blink{50%{opacity:.3}}
+    @keyframes moveLines{
+      0%{transform:translateY(0);}
+      100%{transform:translateY(4px);}
+    }
+
+    /* шум */
+    .noise{
+      position:absolute;
+      inset:0;
+      background:url('https://i.imgur.com/o4S4q2N.png');
+      opacity:.07;
+      animation:noiseMove .4s steps(8) infinite;
+      mix-blend-mode:overlay;
+    }
+    @keyframes noiseMove{
+      0%{background-position:0 0;}
+      100%{background-position:100px 100px;}
+    }
+
+    /* ефект стробоскопа */
+    .flash{
+      position:absolute;
+      inset:0;
+      background:rgba(255,255,255,0.2);
+      opacity:0;
+      animation:flashBlink 1.4s infinite;
+    }
+    @keyframes flashBlink{
+      10%{opacity:.4;}
+      12%{opacity:0;}
+      70%{opacity:0;}
+      72%{opacity:.3;}
+      74%{opacity:0;}
+    }
+
     @keyframes fadeIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>БЕСПЛАТНЫЙ ВАЙФАЙ  FREE WIFI</h1>
+    <h1>БЕСПЛАТНЫЙ ВАЙФАЙ + ЗАВИСАНИЕ</h1>
     <button class="btn" id="wifiBtn">Підключитись</button>
   </div>
 
   <div class="overlay" id="overlay">
-    <div class="freeze-text">📵 Телефон завис...</div>
+    <div class="glitch-lines"></div>
+    <div class="noise"></div>
+    <div class="flash"></div>
   </div>
 
   <script>
     const btn = document.getElementById('wifiBtn');
     const overlay = document.getElementById('overlay');
 
-    // 🔊 вставь сюда mp3-ссылку из myinstants (должна заканчиваться на .mp3)
+    // 🔊 прямое mp3 — звук работает без открытия страницы
     const audio = new Audio("https://www.myinstants.com/media/sounds/ochen-zhiostkii-ston-iakovliva.mp3");
 
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       overlay.classList.add('active');
-      audio.currentTime = 0;
-      audio.play().catch(() => {
-        // если не разрешено авто-проигрывание — откроем оригинальную страницу
+      try {
+        audio.currentTime = 0;
+        await audio.play();
+      } catch {
         window.open("https://www.myinstants.com/ru/instant/ochen-zhiostkii-ston-iakovliva-79757/");
-      });
-    });
+      }
 
-    // клик по экрану "размораживает"
-    overlay.addEventListener('click', () => {
-      overlay.classList.remove('active');
-      audio.pause();
-      audio.currentTime = 0;
+      // имитация «глюка» и вібрації
+      let t = 0;
+      const vib = setInterval(()=>{
+        const x = Math.sin(t*10)*4;
+        const y = Math.cos(t*8)*4;
+        overlay.style.transform=`translate(${x}px,${y}px)`;
+        t+=0.1;
+      },16);
+
+      // розморозка при кліку
+      overlay.addEventListener('click',()=>{
+        overlay.classList.remove('active');
+        overlay.style.transform='';
+        clearInterval(vib);
+        audio.pause();
+        audio.currentTime=0;
+      },{once:true});
     });
   </script>
 </body>
 </html>
-
