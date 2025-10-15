@@ -5,145 +5,152 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Безкоштовний Wi-Fi</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
-    html,body{
-      height:100%;margin:0;
-      font-family:"Poppins",system-ui,sans-serif;
-      background:radial-gradient(circle at 50% 30%,#202648,#07090f 80%);
-      color:#fff;
-      overflow:hidden;
-      display:flex;align-items:center;justify-content:center;
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap');
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: "Poppins", sans-serif;
+      background: radial-gradient(circle at 50% 30%, #202648, #07090f 90%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      color: #fff;
     }
 
-    /* — карточка — */
-    .container{
-      position:relative;
-      text-align:center;
-      padding:70px 90px;
-      border-radius:28px;
-      background:rgba(255,255,255,0.03);
-      backdrop-filter:blur(22px) saturate(160%);
-      border:1px solid rgba(255,255,255,0.05);
-      box-shadow:0 0 120px rgba(90,120,255,0.15);
-      animation:fadeIn 1.2s ease forwards;
-      overflow:hidden;
-      transition:transform 0.6s ease, box-shadow 0.6s ease;
+    /* --- карточка --- */
+    .container {
+      position: relative;
+      text-align: center;
+      padding: 70px 100px;
+      border-radius: 30px;
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(22px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      box-shadow: 0 0 60px rgba(100, 150, 255, 0.2);
+      animation: fadeIn 1s ease forwards;
+      overflow: hidden;
+      transition: transform 0.5s ease, box-shadow 0.6s ease;
     }
-    .container::before{
-      content:"";
-      position:absolute;
-      inset:0;
-      background:radial-gradient(circle at 50% 0%,rgba(255,255,255,0.07),transparent 70%);
-      animation:rotateGlow 8s linear infinite;
-    }
-    @keyframes rotateGlow{
-      from{transform:rotate(0deg);}
-      to{transform:rotate(360deg);}
-    }
-    .container:hover{
-      transform:scale(1.02);
-      box-shadow:0 0 160px rgba(100,150,255,0.3);
+    .container:hover {
+      transform: scale(1.02);
+      box-shadow: 0 0 100px rgba(120, 180, 255, 0.4);
     }
 
-    /* — текст — */
-    h1{
-      font-size:46px;
-      font-weight:800;
-      margin-bottom:40px;
-      background:linear-gradient(90deg,#82d3ff,#ffc3f2);
-      -webkit-background-clip:text;
-      color:transparent;
-      letter-spacing:1px;
-      text-shadow:0 0 20px rgba(255,255,255,0.2);
-      animation:textGlow 5s ease-in-out infinite;
+    /* --- подсветка --- */
+    .container::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.08), transparent 70%);
+      animation: glowMove 10s linear infinite;
     }
-    @keyframes textGlow{
-      0%,100%{filter:drop-shadow(0 0 6px rgba(255,255,255,0.3));}
-      50%{filter:drop-shadow(0 0 16px rgba(255,255,255,0.8));}
+    @keyframes glowMove {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
 
-    /* — кнопка — */
-    .btn{
-      background:linear-gradient(135deg,#ff7a7a,#ff2fc9);
-      border:none;
-      color:#fff;
-      padding:20px 60px;
-      border-radius:16px;
-      font-size:22px;
-      font-weight:700;
-      cursor:pointer;
-      box-shadow:0 10px 40px rgba(255,70,120,0.4);
-      transition:transform .4s,box-shadow .4s,filter .4s;
+    /* --- кнопка --- */
+    .btn {
+      position: relative;
+      background: linear-gradient(135deg, #7cf7ff, #2196f3);
+      border: none;
+      color: #fff;
+      padding: 20px 70px;
+      border-radius: 16px;
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      overflow: hidden;
+      box-shadow: 0 0 60px rgba(0, 180, 255, 0.5);
+      transition: all 0.4s ease;
     }
-    .btn:hover{
-      transform:translateY(-5px) scale(1.05);
-      box-shadow:0 18px 80px rgba(255,70,120,0.6);
-      filter:brightness(1.1);
+    .btn::before {
+      content: "";
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: 0.5s;
     }
-    .btn:active{transform:scale(.97);}
-
-    /* — overlay — */
-    .overlay{
-      position:fixed;
-      inset:0;
-      background:#000;
-      display:flex;align-items:center;justify-content:center;
-      opacity:0;pointer-events:none;
-      z-index:100;
-      transition:opacity 0.8s ease;
-      overflow:hidden;
+    .btn:hover::before { left: 100%; }
+    .btn:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 0 80px rgba(0, 200, 255, 0.8);
     }
-    .overlay.active{
-      opacity:1;
-      pointer-events:auto;
+    .btn:active {
+      transform: scale(0.97);
     }
 
-    /* — эффекты — */
-    .glitch-lines{
-      position:absolute;
-      inset:0;
-      background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 4px);
-      mix-blend-mode:screen;
-      animation:moveLines 1s steps(2) infinite;
-      opacity:.5;
+    /* --- overlay --- */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.8s ease;
+      z-index: 100;
+      overflow: hidden;
     }
-    @keyframes moveLines{
-      0%{transform:translateY(0);}
-      100%{transform:translateY(4px);}
-    }
-
-    .noise{
-      position:absolute;
-      inset:0;
-      background:url('https://i.imgur.com/o4S4q2N.png');
-      opacity:.08;
-      animation:noiseMove .35s steps(8) infinite;
-      mix-blend-mode:overlay;
-    }
-    @keyframes noiseMove{
-      0%{background-position:0 0;}
-      100%{background-position:120px 120px;}
+    .overlay.active {
+      opacity: 1;
+      pointer-events: auto;
     }
 
-    .flash{
-      position:absolute;
-      inset:0;
-      background:rgba(255,255,255,0.15);
-      opacity:0;
-      animation:flashBlink 1.6s infinite ease-in-out;
+    /* --- эффекты --- */
+    .glitch-lines {
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 4px
+      );
+      animation: moveLines 0.8s steps(2) infinite;
+      opacity: 0.5;
     }
-    @keyframes flashBlink{
-      0%,90%,100%{opacity:0;}
-      10%,11%{opacity:.4;}
-      60%,61%{opacity:.2;}
+    @keyframes moveLines {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(4px); }
     }
 
-    @keyframes fadeIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+    .noise {
+      position: absolute;
+      inset: 0;
+      background: url('https://i.imgur.com/o4S4q2N.png');
+      opacity: 0.07;
+      animation: noiseMove .35s steps(8) infinite;
+      mix-blend-mode: overlay;
+    }
+    @keyframes noiseMove {
+      0% { background-position: 0 0; }
+      100% { background-position: 120px 120px; }
+    }
+
+    .flash {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.12);
+      opacity: 0;
+      animation: flashBlink 1.8s infinite ease-in-out;
+    }
+    @keyframes flashBlink {
+      0%, 90%, 100% { opacity: 0; }
+      10%, 11% { opacity: 0.4; }
+      60%, 61% { opacity: 0.2; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>БЕСПЛАТНЫЙ ВАЙФАЙ + ЗАВИСАНИЕ</h1>
+    <h1 style="font-size:42px;margin-bottom:40px;letter-spacing:1px;background:linear-gradient(90deg,#79e7ff,#9b8fff);-webkit-background-clip:text;color:transparent;">Безкоштовний Wi-Fi</h1>
     <button class="btn" id="wifiBtn">Підключитись</button>
   </div>
 
@@ -156,40 +163,38 @@
   <script>
     const btn = document.getElementById('wifiBtn');
     const overlay = document.getElementById('overlay');
-
-    // 🔊 можно заменить ссылку на любой свой mp3
-    const audio = new Audio("https://www.myinstants.com/media/sounds/sci-fi-beep.mp3");
+    const audio = new Audio("https://www.myinstants.com/media/sounds/liuto-stonet.mp3");
 
     btn.addEventListener('click', async () => {
       overlay.classList.add('active');
-      document.body.style.transition="filter 0.8s ease";
-      document.body.style.filter="blur(2px) brightness(0.8)";
-
+      document.body.style.transition = "filter 0.8s ease";
+      document.body.style.filter = "blur(3px) brightness(0.8)";
+      
       try {
         audio.currentTime = 0;
         await audio.play();
-      } catch {
-        console.warn("Автовоспроизведение заблокировано — звук не воспроизводится.");
+      } catch(e) {
+        console.warn("Автовоспроизведение звука заблокировано браузером.");
       }
 
-      // лёгкая "вибрация"
+      // легкий "глюк"
       let t = 0;
-      const vib = setInterval(()=>{
-        const x = Math.sin(t*15)*3;
-        const y = Math.cos(t*12)*3;
-        overlay.style.transform=`translate(${x}px,${y}px)`;
-        t+=0.1;
-      },16);
+      const vib = setInterval(() => {
+        const x = Math.sin(t * 15) * 3;
+        const y = Math.cos(t * 12) * 3;
+        overlay.style.transform = `translate(${x}px, ${y}px)`;
+        t += 0.1;
+      }, 16);
 
-      // снимаем зависание по клику
-      overlay.addEventListener('click',()=>{
+      // снять зависание по клику
+      overlay.addEventListener('click', () => {
         overlay.classList.remove('active');
-        overlay.style.transform='';
-        document.body.style.filter="";
+        overlay.style.transform = '';
+        document.body.style.filter = "";
         clearInterval(vib);
         audio.pause();
-        audio.currentTime=0;
-      },{once:true});
+        audio.currentTime = 0;
+      }, { once: true });
     });
   </script>
 </body>
