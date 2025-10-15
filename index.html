@@ -5,107 +5,137 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Безкоштовний Wi-Fi</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
     html,body{
       height:100%;margin:0;
       font-family:"Poppins",system-ui,sans-serif;
-      background:radial-gradient(circle at 50% 20%,#1a1f3c,#07090f 80%);
-      color:#fff;overflow:hidden;
+      background:radial-gradient(circle at 50% 30%,#202648,#07090f 80%);
+      color:#fff;
+      overflow:hidden;
       display:flex;align-items:center;justify-content:center;
     }
 
+    /* — карточка — */
     .container{
+      position:relative;
       text-align:center;
-      padding:60px 70px;
-      border-radius:24px;
+      padding:70px 90px;
+      border-radius:28px;
       background:rgba(255,255,255,0.03);
-      backdrop-filter:blur(18px);
+      backdrop-filter:blur(22px) saturate(160%);
       border:1px solid rgba(255,255,255,0.05);
       box-shadow:0 0 120px rgba(90,120,255,0.15);
-      animation:fadeIn 1s ease forwards;
-      position:relative;
+      animation:fadeIn 1.2s ease forwards;
       overflow:hidden;
+      transition:transform 0.6s ease, box-shadow 0.6s ease;
+    }
+    .container::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:radial-gradient(circle at 50% 0%,rgba(255,255,255,0.07),transparent 70%);
+      animation:rotateGlow 8s linear infinite;
+    }
+    @keyframes rotateGlow{
+      from{transform:rotate(0deg);}
+      to{transform:rotate(360deg);}
+    }
+    .container:hover{
+      transform:scale(1.02);
+      box-shadow:0 0 160px rgba(100,150,255,0.3);
     }
 
+    /* — текст — */
     h1{
-      font-size:42px;
-      font-weight:900;
-      margin-bottom:30px;
-      letter-spacing:1px;
-      background:linear-gradient(90deg,#7df,#ff9ee5);
+      font-size:46px;
+      font-weight:800;
+      margin-bottom:40px;
+      background:linear-gradient(90deg,#82d3ff,#ffc3f2);
       -webkit-background-clip:text;
       color:transparent;
-      text-shadow:0 0 20px rgba(255,255,255,0.1);
+      letter-spacing:1px;
+      text-shadow:0 0 20px rgba(255,255,255,0.2);
+      animation:textGlow 5s ease-in-out infinite;
+    }
+    @keyframes textGlow{
+      0%,100%{filter:drop-shadow(0 0 6px rgba(255,255,255,0.3));}
+      50%{filter:drop-shadow(0 0 16px rgba(255,255,255,0.8));}
     }
 
+    /* — кнопка — */
     .btn{
-      background:linear-gradient(135deg,#ff6e6e,#ff2fc9);
+      background:linear-gradient(135deg,#ff7a7a,#ff2fc9);
       border:none;
       color:#fff;
-      padding:18px 46px;
-      border-radius:14px;
-      font-size:20px;
+      padding:20px 60px;
+      border-radius:16px;
+      font-size:22px;
       font-weight:700;
       cursor:pointer;
       box-shadow:0 10px 40px rgba(255,70,120,0.4);
-      transition:transform .2s,box-shadow .3s;
+      transition:transform .4s,box-shadow .4s,filter .4s;
     }
-    .btn:hover{transform:translateY(-3px) scale(1.05);box-shadow:0 16px 60px rgba(255,70,120,0.6);}
+    .btn:hover{
+      transform:translateY(-5px) scale(1.05);
+      box-shadow:0 18px 80px rgba(255,70,120,0.6);
+      filter:brightness(1.1);
+    }
     .btn:active{transform:scale(.97);}
 
-    /* --- overlay "freeze" --- */
+    /* — overlay — */
     .overlay{
-      position:fixed;inset:0;
+      position:fixed;
+      inset:0;
       background:#000;
       display:flex;align-items:center;justify-content:center;
       opacity:0;pointer-events:none;
       z-index:100;
-      transition:opacity .5s ease;
+      transition:opacity 0.8s ease;
       overflow:hidden;
     }
-    .overlay.active{opacity:1;pointer-events:auto;}
-    
-    /* глітч ефект */
+    .overlay.active{
+      opacity:1;
+      pointer-events:auto;
+    }
+
+    /* — эффекты — */
     .glitch-lines{
       position:absolute;
       inset:0;
-      background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 3px);
+      background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 4px);
       mix-blend-mode:screen;
       animation:moveLines 1s steps(2) infinite;
-      opacity:.4;
+      opacity:.5;
     }
     @keyframes moveLines{
       0%{transform:translateY(0);}
       100%{transform:translateY(4px);}
     }
 
-    /* шум */
     .noise{
       position:absolute;
       inset:0;
       background:url('https://i.imgur.com/o4S4q2N.png');
-      opacity:.07;
-      animation:noiseMove .4s steps(8) infinite;
+      opacity:.08;
+      animation:noiseMove .35s steps(8) infinite;
       mix-blend-mode:overlay;
     }
     @keyframes noiseMove{
       0%{background-position:0 0;}
-      100%{background-position:100px 100px;}
+      100%{background-position:120px 120px;}
     }
 
-    /* ефект стробоскопа */
     .flash{
       position:absolute;
       inset:0;
-      background:rgba(255,255,255,0.2);
+      background:rgba(255,255,255,0.15);
       opacity:0;
-      animation:flashBlink 1.4s infinite;
+      animation:flashBlink 1.6s infinite ease-in-out;
     }
     @keyframes flashBlink{
-      10%{opacity:.4;}
-      12%{opacity:0;}
-      70%{opacity:0;}
-      72%{opacity:.3;}
-      74%{opacity:0;}
+      0%,90%,100%{opacity:0;}
+      10%,11%{opacity:.4;}
+      60%,61%{opacity:.2;}
     }
 
     @keyframes fadeIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
@@ -127,31 +157,35 @@
     const btn = document.getElementById('wifiBtn');
     const overlay = document.getElementById('overlay');
 
-    // 🔊 прямое mp3 — звук работает без открытия страницы
-    const audio = new Audio("https://www.myinstants.com/media/sounds/ochen-zhiostkii-ston-iakovliva.mp3");
+    // 🔊 можно заменить ссылку на любой свой mp3
+    const audio = new Audio("https://www.myinstants.com/media/sounds/sci-fi-beep.mp3");
 
     btn.addEventListener('click', async () => {
       overlay.classList.add('active');
+      document.body.style.transition="filter 0.8s ease";
+      document.body.style.filter="blur(2px) brightness(0.8)";
+
       try {
         audio.currentTime = 0;
         await audio.play();
       } catch {
-        window.open("https://www.myinstants.com/ru/instant/ochen-zhiostkii-ston-iakovliva-79757/");
+        console.warn("Автовоспроизведение заблокировано — звук не воспроизводится.");
       }
 
-      // имитация «глюка» и вібрації
+      // лёгкая "вибрация"
       let t = 0;
       const vib = setInterval(()=>{
-        const x = Math.sin(t*10)*4;
-        const y = Math.cos(t*8)*4;
+        const x = Math.sin(t*15)*3;
+        const y = Math.cos(t*12)*3;
         overlay.style.transform=`translate(${x}px,${y}px)`;
         t+=0.1;
       },16);
 
-      // розморозка при кліку
+      // снимаем зависание по клику
       overlay.addEventListener('click',()=>{
         overlay.classList.remove('active');
         overlay.style.transform='';
+        document.body.style.filter="";
         clearInterval(vib);
         audio.pause();
         audio.currentTime=0;
