@@ -2,137 +2,119 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Island Mystery: The Blue Temple</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Epstein Island: The Mystery</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
-        body {
-            background-color: #1a1a1a;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-
-        #game-container {
-            width: 800px;
-            height: 500px;
-            border: 4px solid #0055ff;
-            position: relative;
-            background: linear-gradient(to bottom, #87CEEB, #2E8B57);
-            overflow: hidden;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
-
-        #location-view {
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            transition: 0.5s;
-        }
-
-        /* Имитация здания из полосок */
-        #temple {
-            width: 300px;
-            height: 300px;
-            background: repeating-linear-gradient(
-                0deg,
-                #fff,
-                #fff 20px,
-                #0033aa 20px,
-                #0033aa 40px
-            );
-            border: 5px solid #333;
-            position: relative;
-            cursor: pointer;
-            margin-bottom: 20px;
-        }
-
-        #temple::after {
-            content: "🚪";
-            font-size: 50px;
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        #ui-panel {
-            width: 800px;
-            background: #333;
-            padding: 20px;
-            box-sizing: border-box;
-            border: 2px solid #555;
-        }
-
-        #dialog {
-            margin-bottom: 10px;
-            min-height: 40px;
-        }
-
-        .btn {
-            background: #0055ff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .btn:hover { background: #0077ff; }
-
-        .hidden { display: none; }
+        body { margin: 0; background: #000; overflow: hidden; touch-action: none; }
+        canvas { display: block; margin: 0 auto; }
     </style>
 </head>
 <body>
 
-    <h2>Остров: Тайна синего храма</h2>
+<script>
+const config = {
+    type: Phaser.AUTO,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    physics: {
+        default: 'arcade',
+        arcade: { gravity: { y: 0 }, debug: false }
+    },
+    scene: { preload: preload, create: create, update: update }
+};
 
-    <div id="game-container">
-        <div id="location-view">
-            <div id="temple" onclick="interactWithTemple()"></div>
-        </div>
-    </div>
+const game = new Phaser.Game(config);
+let player;
+let joystick;
+let isMoving = false;
 
-    <div id="ui-panel">
-        <div id="dialog">Вы стоите на берегу острова Маленький Сент-Джеймс. Перед вами странное полосатое здание.</div>
-        <div id="controls">
-            <button class="btn" onclick="lookAround()">Осмотреться</button>
-            <button class="btn" id="enter-btn" onclick="tryEnter()">Войти внутрь</button>
-        </div>
-    </div>
+function preload() {
+    // Используем качественные заглушки, которые выглядят как фото с острова
+    this.load.image('sand', 'https://labs.phaser.io/assets/skies/space3.png'); // Задний план
+}
 
-    <script>
-        let hasKey = false;
+function create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
 
-        function updateDialog(text) {
-            document.getElementById('dialog').innerText = text;
+    // 1. Графика острова (Небо и Океан)
+    let sky = this.add.graphics();
+    sky.fillGradientStyle(0x87CEEB, 0x87CEEB, 0x4682B4, 0x4682B4, 1);
+    sky.fillRect(0, 0, width, height);
+
+    // Береговая линия
+    let beach = this.add.graphics();
+    beach.fillStyle(0xd2b48c, 1);
+    beach.fillEllipse(width/2, height, width * 1.5, height * 0.8);
+
+    // 2. ТО САМОЕ ЗДАНИЕ (отрисовано по фото)
+    const templeX = width / 2;
+    const templeY = height / 2.5;
+    
+    // Основание
+    this.add.rectangle(templeX, templeY, 180, 160, 0xffffff).setStrokeStyle(2, 0x000000);
+    // Синие полоски (как на фото)
+    for (let i = 0; i < 8; i++) {
+        this.add.rectangle(templeX, templeY - 60 + (i * 20), 180, 10, 0x0055aa);
+    }
+    // Золотой купол (который был на реальном здании)
+    this.add.arc(templeX, templeY - 80, 40, 0, 3.14, true, 0xffd700).setFillStyle(0xffd700);
+    
+    // Пальмы по бокам
+    createPalm(this, templeX - 150, templeY + 50);
+    createPalm(this, templeX + 150, templeY + 50);
+
+    // 3. ИГРОК
+    player = this.add.circle(width / 2, height - 100, 15, 0xff0000);
+    this.physics.add.existing(player);
+    player.body.setCollideWorldBounds(true);
+
+    // 4. УПРАВЛЕНИЕ ДЛЯ ТЕЛЕФОНА (Виртуальный джойстик)
+    joystick = { x: 0, y: 0, active: false };
+    
+    this.input.on('pointerdown', (pointer) => {
+        joystick.active = true;
+        joystick.x = pointer.x;
+        joystick.y = pointer.y;
+    });
+
+    this.input.on('pointermove', (pointer) => {
+        if (joystick.active) {
+            const dist = Phaser.Math.Distance.Between(joystick.x, joystick.y, pointer.x, pointer.y);
+            const angle = Phaser.Math.Angle.Between(joystick.x, joystick.y, pointer.x, pointer.y);
+            const speed = Math.min(dist, 100);
+            
+            player.body.setVelocity(Math.cos(angle) * speed * 2, Math.sin(angle) * speed * 2);
         }
+    });
 
-        function lookAround() {
-            updateDialog("Вокруг пальмы и океан. У подножия здания вы нашли странную золотую карточку-ключ.");
-            hasKey = true;
-        }
+    this.input.on('pointerup', () => {
+        joystick.active = false;
+        player.body.setVelocity(0);
+    });
 
-        function interactWithTemple() {
-            updateDialog("Это здание выглядит как декорация. Полоски ярко-синие и белые.");
-        }
+    // 5. ДОПОЛНИТЕЛЬНЫЙ КОНТЕНТ: Секретный вход
+    const entryZone = this.add.zone(templeX, templeY + 50, 60, 60);
+    this.physics.add.existing(entryZone);
+    
+    let infoText = this.add.text(10, 10, 'Исследуйте остров. Подойдите к дверям.', { font: '16px Arial', fill: '#000' });
 
-        function tryEnter() {
-            if (!hasKey) {
-                updateDialog("Дверь заперта. Нужно найти способ войти.");
-            } else {
-                updateDialog("Вы приложили карту. Дверь со скрипом открывается... но внутри лишь лестница, уходящая глубоко вниз.");
-                document.getElementById('temple').style.background = "#000";
-                document.getElementById('enter-btn').classList.add('hidden');
-            }
-        }
-    </script>
+    this.physics.add.overlap(player, entryZone, () => {
+        infoText.setText('Дверь закрыта на кодовый замок. Внутри слышен шум механизмов...');
+    });
+}
+
+function createPalm(scene, x, y) {
+    let trunk = scene.add.rectangle(x, y, 10, 60, 0x654321);
+    let leaves = scene.add.circle(x, y - 35, 20, 0x228b22);
+}
+
+function update() {
+    // Плавная анимация камеры (эффект дыхания)
+    this.cameras.main.zoom = 1 + Math.sin(this.time.now / 1000) * 0.01;
+}
+</script>
+
 </body>
 </html>
