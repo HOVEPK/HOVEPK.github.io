@@ -1,307 +1,125 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>Остров Литтл Сент Джеймс • 2019</title>
-  <style>
-    body { margin:0; overflow:hidden; background:#000; font-family:Arial, sans-serif; }
-    canvas { display:block; }
-    #ui {
-      position: absolute;
-      bottom: 20px; left: 20px; right: 20px;
-      pointer-events: none;
-      color: #eee;
-      text-shadow: 0 0 4px #000;
-    }
-    #log {
-      position: absolute;
-      top: 10px; left: 10px; right: 10px;
-      background: rgba(0,0,0,0.5);
-      padding: 8px;
-      border-radius: 8px;
-      font-size: 13px;
-      max-height: 120px; overflow-y: auto;
-      pointer-events: none;
-    }
-    .joystick {
-      position: absolute;
-      bottom: 40px; left: 40px;
-      width: 120px; height: 120px;
-      background: rgba(255,255,255,0.08);
-      border-radius: 50%;
-      pointer-events: auto;
-      touch-action: none;
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-    .stick {
-      width: 60px; height: 60px;
-      background: rgba(200,200,255,0.4);
-      border-radius: 50%;
-      position: absolute;
-      transform: translate(-50%,-50%);
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Вымышленный остров</title>
+<style>
+  body { margin: 0; overflow: hidden; }
+  canvas { display: block; }
+</style>
 </head>
 <body>
-
-<div id="log"></div>
-
-<div class="joystick" id="joy">
-  <div class="stick" id="stick"></div>
-</div>
-
-<canvas id="c"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/controls/PointerLockControls.js"></script>
 
 <script>
-// ================================================
-// Очень упрощённая 2.5D игра — остров Эпштейна
-// Управление: джойстик или стрелки WASD / ←↑→↓
-// ================================================
+let scene, camera, renderer, controls;
 
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-const log = document.getElementById('log');
+init();
+animate();
 
-let W, H;
-function resize() {
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resize);
-resize();
+function init() {
+  // Сцена
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87ceeb); // небо
 
-// Игрок
-let player = {
-  x: 400,
-  y: 300,
-  angle: 0,
-  speed: 0,
-  maxSpeed: 2.8,
-  turnSpeed: 0.08
-};
+  // Камера
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+  camera.position.set(0, 2, 5);
 
-// Камера (от первого лица + немного сверху)
-let camera = { zoom: 1.1, height: 40 };
+  // Рендерер
+  renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
 
-// Джойстик
-const joy = document.getElementById('joy');
-const stick = document.getElementById('stick');
-let touchId = null;
-let joyCenterX, joyCenterY;
-let input = { forward: 0, turn: 0 };
+  // Освещение
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.set(5,10,7);
+  scene.add(light);
 
-joy.addEventListener('touchstart', e => {
-  e.preventDefault();
-  if (touchId === null) {
-    touchId = e.changedTouches[0].identifier;
-    updateStick(e.changedTouches[0]);
-  }
-});
-joy.addEventListener('touchmove', e => {
-  e.preventDefault();
-  for (let t of e.changedTouches) {
-    if (t.identifier === touchId) updateStick(t);
-  }
-});
-joy.addEventListener('touchend', e => {
-  e.preventDefault();
-  for (let t of e.changedTouches) {
-    if (t.identifier === touchId) {
-      touchId = null;
-      resetStick();
-    }
-  }
-});
+  const ambient = new THREE.AmbientLight(0x404040, 0.7);
+  scene.add(ambient);
 
-function updateStick(touch) {
-  if (!joyCenterX) {
-    let rect = joy.getBoundingClientRect();
-    joyCenterX = rect.left + rect.width/2;
-    joyCenterY = rect.top + rect.height/2;
-  }
-  let dx = touch.clientX - joyCenterX;
-  let dy = touch.clientY - joyCenterY;
-  let dist = Math.sqrt(dx*dx + dy*dy);
-  let maxDist = 55;
-  if (dist > maxDist) {
-    dx *= maxDist / dist;
-    dy *= maxDist / dist;
-  }
-  stick.style.left = (joyCenterX + dx) + 'px';
-  stick.style.top  = (joyCenterY + dy) + 'px';
+  // Остров (земля)
+  const geometryIsland = new THREE.CylinderGeometry(20, 20, 1, 32);
+  const materialIsland = new THREE.MeshLambertMaterial({color: 0x228B22});
+  const island = new THREE.Mesh(geometryIsland, materialIsland);
+  island.position.y = -0.5;
+  scene.add(island);
 
-  input.forward = -dy / maxDist;   // вверх = вперёд
-  input.turn    = dx  / maxDist;   // вправо = поворот направо
-}
+  // Вода вокруг
+  const geometryWater = new THREE.CylinderGeometry(50, 50, 0.1, 32);
+  const materialWater = new THREE.MeshLambertMaterial({color: 0x1E90FF, transparent:true, opacity:0.6});
+  const water = new THREE.Mesh(geometryWater, materialWater);
+  water.position.y = -0.55;
+  scene.add(water);
 
-function resetStick() {
-  stick.style.left = '50%';
-  stick.style.top  = '50%';
-  input.forward = input.turn = 0;
-}
+  // Несколько особняков
+  for(let i=0; i<5; i++){
+    const houseGeo = new THREE.BoxGeometry(3,2,3);
+    const houseMat = new THREE.MeshLambertMaterial({color: 0xFFD700});
+    const house = new THREE.Mesh(houseGeo, houseMat);
+    house.position.set(Math.random()*30-15,1,Math.random()*30-15);
+    scene.add(house);
 
-// Клавиатура (на всякий случай)
-let keys = {};
-window.addEventListener('keydown', e=> keys[e.key.toLowerCase()]=true);
-window.addEventListener('keyup',   e=> keys[e.key.toLowerCase()]=false);
-
-// Локации острова (координаты примерные, основано на дронах и картах 2019)
-const locations = [
-  {name:"Причал",        x:620, y:480, color:"#4682b4", desc:"Главный причал. Здесь швартовались яхты гостей."},
-  {name:"Helipad",       x:680, y:380, color:"#555",    desc:"Вертолётная площадка. Часто прилетали знаменитости."},
-  {name:"Main House",    x:380, y:220, color:"#8b5a2b", desc:"Главный особняк. Бассейн, библиотека, спальни..."},
-  {name:"Temple",        x:120, y:320, color:"#00b7eb", desc:"Знаменитое здание с синими полосами. Раньше был золотой купол."},
-  {name:"Sundial",       x:450, y:500, color:"#ffd700", desc:"Солнечные часы. Место встреч и ритуалов по слухам."},
-  {name:"Гостевые дома", x:300, y:380, color:"#cd853f", desc:"Коттеджи для гостей и персонала."},
-  {name:"Южный пляж",    x:200, y:580, color:"#40e0d0", desc:"Уединённый пляж на юге острова."}
-];
-
-// Туман / атмосфера
-let time = 0;
-
-function msg(txt) {
-  log.innerHTML += txt + "<br>";
-  log.scrollTop = log.scrollHeight;
-}
-
-function findNearest() {
-  let minDist = Infinity;
-  let near = null;
-  for (let loc of locations) {
-    let dx = loc.x - player.x;
-    let dy = loc.y - player.y;
-    let d = Math.sqrt(dx*dx + dy*dy);
-    if (d < minDist) {
-      minDist = d;
-      near = loc;
-    }
-  }
-  return minDist < 60 ? near : null;
-}
-
-function update() {
-  time += 0.016;
-
-  // Управление
-  let forward = input.forward;
-  let turn    = input.turn;
-
-  if (keys['w'] || keys['arrowup'])    forward =  1;
-  if (keys['s'] || keys['arrowdown'])  forward = -0.6;
-  if (keys['a'] || keys['arrowleft'])  turn = -1;
-  if (keys['d'] || keys['arrowright']) turn =  1;
-
-  player.angle += turn * player.turnSpeed;
-  player.speed = forward * player.maxSpeed;
-
-  player.x += Math.cos(player.angle) * player.speed;
-  player.y += Math.sin(player.angle) * player.speed;
-
-  // Ограничение карты (остров примерно 800×600)
-  player.x = Math.max(50, Math.min(750, player.x));
-  player.y = Math.max(50, Math.min(550, player.y));
-
-  // Проверка близости к локациям
-  let near = findNearest();
-  if (near && near.desc) {
-    log.innerHTML = near.name + "<br>" + near.desc;
-  }
-}
-
-function draw() {
-  ctx.fillStyle = "#0a1f3a"; // тёмное море вокруг
-  ctx.fillRect(0,0,W,H);
-
-  // Остров (зелёный фон)
-  ctx.save();
-  ctx.translate(W/2, H/2);
-  ctx.scale(camera.zoom, camera.zoom);
-  ctx.translate(-player.x, -player.y);
-
-  // Земля острова (примерная форма)
-  ctx.fillStyle = "#1e3a2f";
-  ctx.beginPath();
-  ctx.moveTo(400,100);
-  ctx.quadraticCurveTo(700,150, 720,300);
-  ctx.quadraticCurveTo(760,480, 620,520);
-  ctx.quadraticCurveTo(380,580, 180,520);
-  ctx.quadraticCurveTo(80,380, 120,220);
-  ctx.quadraticCurveTo(180,80, 400,100);
-  ctx.closePath();
-  ctx.fill();
-
-  // Джунгли / трава
-  ctx.fillStyle = "#2e5c3a";
-  ctx.fillRect(100,150, 620,400);
-
-  // Дороги / тропинки (белые линии)
-  ctx.strokeStyle = "#ddd";
-  ctx.lineWidth = 6;
-  ctx.beginPath();
-  ctx.moveTo(620,480); ctx.lineTo(500,400);
-  ctx.lineTo(400,300); ctx.lineTo(300,380);
-  ctx.moveTo(380,220); ctx.lineTo(450,300);
-  ctx.stroke();
-
-  // Объекты
-  for (let loc of locations) {
-    let dx = loc.x - player.x;
-    let dy = loc.y - player.y;
-    let dist = Math.sqrt(dx*dx + dy*dy);
-
-    if (dist < 300) {
-      let alpha = Math.max(0.2, 1 - dist/300);
-      ctx.globalAlpha = alpha;
-
-      // Тень
-      ctx.fillStyle = "rgba(0,0,0,0.5)";
-      ctx.beginPath();
-      ctx.ellipse(loc.x, loc.y+12, 24, 8, 0, 0, Math.PI*2);
-      ctx.fill();
-
-      // Сам объект
-      ctx.fillStyle = loc.color;
-      ctx.fillRect(loc.x-18, loc.y-24, 36, 48);
-
-      // Крыша / деталь
-      ctx.fillStyle = loc.name.includes("Temple") ? "#001f3f" : "#444";
-      ctx.fillRect(loc.x-22, loc.y-30, 44, 12);
-
-      ctx.globalAlpha = 1;
-    }
+    // Крыша
+    const roofGeo = new THREE.ConeGeometry(2,1.5,4);
+    const roofMat = new THREE.MeshLambertMaterial({color:0x8B0000});
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.position.set(house.position.x,2.75,house.position.z);
+    roof.rotation.y = Math.PI/4;
+    scene.add(roof);
   }
 
-  ctx.restore();
+  // Контролы для телефона/мыши
+  controls = new THREE.PointerLockControls(camera, renderer.domElement);
 
-  // Туман / жуткая атмосфера
-  let grad = ctx.createLinearGradient(0,0,0,H);
-  grad.addColorStop(0,   "rgba(40,60,80,0.4)");
-  grad.addColorStop(0.5, "rgba(20,30,50,0.1)");
-  grad.addColorStop(1,   "rgba(10,20,40,0.6)");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0,0,W,H);
+  document.body.addEventListener('click', () => {
+    controls.lock();
+  });
 
-  // Игрок (глаза / взгляд)
-  ctx.fillStyle = "rgba(255,240,200,0.9)";
-  ctx.beginPath();
-  ctx.arc(W/2-12, H/2-8, 5, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath();
-  ctx.arc(W/2+12, H/2-8, 5, 0, Math.PI*2); ctx.fill();
+  // Адаптивный размер
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
 
-  requestAnimationFrame(loop);
+  // Пол (для коллизий)
+  const floorGeo = new THREE.PlaneGeometry(100,100);
+  const floorMat = new THREE.MeshBasicMaterial({visible:false});
+  const floor = new THREE.Mesh(floorGeo,floorMat);
+  floor.rotation.x = -Math.PI/2;
+  scene.add(floor);
 }
 
-function loop() {
-  update();
-  draw();
+// Движение
+const velocity = new THREE.Vector3();
+const direction = new THREE.Vector3();
+const moveForward = false;
+const moveBackward = false;
+const moveLeft = false;
+const moveRight = false;
+
+const keys = {};
+document.addEventListener('keydown',(e)=>{keys[e.code]=true;});
+document.addEventListener('keyup',(e)=>{keys[e.code]=false;});
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  if(controls.isLocked){
+    const speed = 0.1;
+    direction.z = Number(keys['KeyS']) - Number(keys['KeyW']);
+    direction.x = Number(keys['KeyD']) - Number(keys['KeyA']);
+    direction.normalize();
+
+    controls.moveRight(direction.x*speed);
+    controls.moveForward(direction.z*speed);
+  }
+
+  renderer.render(scene,camera);
 }
-
-loop();
-
-msg("Добро пожаловать на Литтл Сент Джеймс • 2019");
-msg("Двигай пальцем по левому кругу • или WASD / стрелки");
-msg("Подойди близко к зданиям — увидишь описание");
 </script>
 </body>
 </html>
