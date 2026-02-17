@@ -2,30 +2,31 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
-    <title>Epstein Island Ultra: Pro Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Little St. James: Definitive Edition</title>
     <style>
-        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; touch-action: none; }
-        canvas { display: block; }
-        #ui-overlay {
-            position: absolute; top: 10px; left: 10px; color: #fff;
-            pointer-events: none; text-shadow: 1px 1px 2px #000; font-size: 12px;
+        body { margin: 0; background: #000; overflow: hidden; touch-action: none; }
+        #joystick-wrapper {
+            position: absolute; bottom: 40px; left: 40px;
+            width: 120px; height: 120px; background: rgba(255,255,255,0.1);
+            border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); touch-action: none;
         }
-        /* Индикаторы зон управления */
-        #touch-zones {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; pointer-events: none;
+        #joystick-stick {
+            position: absolute; top: 35px; left: 35px;
+            width: 50px; height: 50px; background: #fff; border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        .zone { flex: 1; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 30px; color: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.03); }
+        #crosshair {
+            position: absolute; top: 50%; left: 50%; width: 4px; height: 4px;
+            background: white; border-radius: 50%; transform: translate(-50%, -50%);
+            pointer-events: none; opacity: 0.5;
+        }
     </style>
 </head>
 <body>
 
-<div id="ui-overlay">LITTLE ST. JAMES • 1ST PERSON • ULTRA</div>
-<div id="touch-zones">
-    <div class="zone">ДВИЖЕНИЕ (ЛЕВО)</div>
-    <div class="zone">ОБЗОР (ПРАВО)</div>
-</div>
+<div id="crosshair"></div>
+<div id="joystick-wrapper"><div id="joystick-stick"></div></div>
 
 <script type="importmap">
     {
@@ -41,13 +42,10 @@
     import { Water } from 'three/addons/objects/Water.js';
     import { Sky } from 'three/addons/objects/Sky.js';
 
-    let scene, camera, renderer, water, clock;
-    let moveForward = 0, moveSide = 0;
+    let scene, camera, renderer, water, clock, sun;
+    let moveDir = { x: 0, y: 0 };
     let lookYaw = 0, lookPitch = 0;
-    
-    // Переменные для тач-управления
-    let moveTouchId = null, lookTouchId = null;
-    let moveStart = new THREE.Vector2(), lookStart = new THREE.Vector2();
+    const colliders = []; // Массив объектов для коллизии
 
     init();
 
@@ -55,183 +53,197 @@
         scene = new THREE.Scene();
         clock = new THREE.Clock();
 
-        camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.rotation.order = 'YXZ'; // Важно для корректного вращения 1-го лица
-        camera.position.set(40, 5, 40);
+        camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2500);
+        camera.rotation.order = 'YXZ';
+        camera.position.set(45, 2, 45);
 
         renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(renderer.domElement);
 
-        setupSky();
-        setupWater();
-        createIsland();
+        setupSkyAndWater();
+        createRealisticIsland();
         setupControls();
 
         window.addEventListener('resize', onWindowResize);
         animate();
     }
 
-    function setupSky() {
+    function setupSkyAndWater() {
         const sky = new Sky();
         sky.scale.setScalar(450000);
         scene.add(sky);
-        const sun = new THREE.Vector3();
-        const phi = THREE.MathUtils.degToRad(87); 
+        sun = new THREE.Vector3();
+        const phi = THREE.MathUtils.degToRad(86); 
         sun.setFromSphericalCoords(1, phi, Math.PI);
         sky.material.uniforms['sunPosition'].value.copy(sun);
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-        const light = new THREE.DirectionalLight(0xffffff, 1.2);
-        light.position.set(50, 50, 50);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const light = new THREE.DirectionalLight(0xffffff, 1.5);
+        light.position.set(100, 100, 100);
         light.castShadow = true;
+        light.shadow.mapSize.set(2048, 2048);
         scene.add(light);
-    }
 
-    function setupWater() {
-        water = new Water(new THREE.PlaneGeometry(1000, 1000), {
+        water = new Water(new THREE.PlaneGeometry(5000, 5000), {
             textureWidth: 512, textureHeight: 512,
             waterNormals: new THREE.TextureLoader().load('https://threejs.org/examples/textures/waternormals.jpg', t => t.wrapS = t.wrapT = THREE.RepeatWrapping),
-            sunDirection: new THREE.Vector3(1,1,1).normalize(),
-            sunColor: 0xffffff, waterColor: 0x003344, distortionScale: 4
+            sunDirection: sun, sunColor: 0xffffff, waterColor: 0x002a3a, distortionScale: 3.7
         });
         water.rotation.x = -Math.PI / 2;
-        water.position.y = 0.5;
+        water.position.y = 0.4;
         scene.add(water);
     }
 
-    function createIsland() {
-        // РЕАЛИСТИЧНЫЙ ЛАНДШАФТ (Холм)
-        const size = 120;
-        const geo = new THREE.PlaneGeometry(size, size, 64, 64);
-        const pos = geo.attributes.position;
+    function createRealisticIsland() {
+        // Ландшафт на основе сложной формы (как реальный остров)
+        const islandGeo = new THREE.PlaneGeometry(150, 150, 100, 100);
+        const pos = islandGeo.attributes.position;
         for (let i = 0; i < pos.count; i++) {
             let x = pos.getX(i), y = pos.getY(i);
+            // Форма "песочных часов" / гантели
+            let islandShape = (Math.pow(x, 2) / 1600 + Math.pow(y, 2) / 4500) < 1.0 || 
+                              (Math.pow(x-40, 2)/800 + Math.pow(y-40, 2)/800) < 0.8;
+            
             let dist = Math.sqrt(x*x + y*y);
-            // Создаем холм в центре для здания
-            let h = Math.max(0, (25 - dist) * 0.4); 
-            // Добавляем неровности (шум)
-            h += Math.sin(x*0.2) * Math.cos(y*0.2) * 1.5;
-            pos.setZ(i, h);
+            let height = 0;
+            if (dist < 50) height = Math.pow(Math.cos(dist/30), 2) * 12; // Центральный холм
+            
+            if (dist > 65 && !islandShape) height = -5; // Уходит под воду
+            else height += Math.sin(x*0.1) * Math.cos(y*0.1) * 2; // Шум рельефа
+
+            pos.setZ(i, Math.max(-2, height));
         }
-        geo.computeVertexNormals();
-        const island = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xe3c1a1, roughness: 1 }));
+        islandGeo.computeVertexNormals();
+        const island = new THREE.Mesh(islandGeo, new THREE.MeshStandardMaterial({ color: 0xc2b280, roughness: 1 }));
         island.rotation.x = -Math.PI / 2;
         island.receiveShadow = true;
         scene.add(island);
 
-        // Храм на вершине холма
-        createDetailedTemple(0, 8, 0);
+        // Храм (Синий с белым + купол)
+        createTemple(0, 11, 0);
 
-        // Улучшенные пальмы
-        for(let i = 0; i < 30; i++) {
+        // Растительность
+        for(let i = 0; i < 40; i++) {
             let a = Math.random() * Math.PI * 2;
-            let r = 25 + Math.random() * 25;
+            let r = 20 + Math.random() * 40;
             createPalm(Math.cos(a)*r, Math.sin(a)*r);
         }
     }
 
-    function createPalm(x, z) {
+    function createTemple(x, y, z) {
         const group = new THREE.Group();
-        // Ствол
-        const trunkGeo = new THREE.CylinderGeometry(0.15, 0.3, 7, 8);
-        const trunk = new THREE.Mesh(trunkGeo, new THREE.MeshStandardMaterial({color: 0x5d4037}));
-        trunk.position.y = 3.5;
-        trunk.rotation.z = (Math.random()-0.5) * 0.2;
-        group.add(trunk);
-        
-        // Листья (Детализированные)
-        for(let i = 0; i < 10; i++) {
-            const leaf = new THREE.Mesh(
-                new THREE.SphereGeometry(2.5, 6, 2),
-                new THREE.MeshStandardMaterial({color: 0x1b5e20, side: THREE.DoubleSide})
-            );
-            leaf.scale.set(1.4, 0.02, 0.3);
-            leaf.position.y = 7;
-            leaf.rotation.y = (i * Math.PI * 2) / 10;
-            leaf.rotation.z = 0.5;
-            group.add(leaf);
-        }
-        group.position.set(x, 1, z);
-        scene.add(group);
-    }
-
-    function createDetailedTemple(x, y, z) {
-        const temple = new THREE.Group();
-        for(let i = 0; i < 15; i++) {
+        for(let i = 0; i < 18; i++) {
             const stripe = new THREE.Mesh(
                 new THREE.BoxGeometry(10, 0.4, 10),
-                new THREE.MeshStandardMaterial({ color: i%2===0?0xffffff:0x0044ff })
+                new THREE.MeshStandardMaterial({ color: i%2===0?0xffffff:0x0047ab, roughness: 0.3 })
             );
             stripe.position.y = i * 0.4;
             stripe.castShadow = true;
-            temple.add(stripe);
+            group.add(stripe);
         }
-        const dome = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 16, 0, 6.3, 0, 1.6), new THREE.MeshStandardMaterial({color: 0xffd700, metalness: 0.9, roughness: 0.1}));
-        dome.position.y = 6;
-        temple.add(dome);
-        temple.position.set(x, y, z);
-        scene.add(temple);
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 16, 0, 6.3, 0, 1.6), new THREE.MeshStandardMaterial({color: 0xffd700, metalness: 0.8, roughness: 0.2}));
+        dome.position.y = 7;
+        group.add(dome);
+        group.position.set(x, y, z);
+        scene.add(group);
+        colliders.push({ pos: new THREE.Vector3(x, 0, z), radius: 6 });
+    }
+
+    function createPalm(x, z) {
+        const h = 5 + Math.random() * 4;
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.4, h), new THREE.MeshStandardMaterial({color: 0x5d4037}));
+        trunk.position.set(x, h/2 + 2, z);
+        trunk.castShadow = true;
+        scene.add(trunk);
+        
+        // Листья
+        for(let i = 0; i < 8; i++) {
+            const leaf = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 2), new THREE.MeshStandardMaterial({color: 0x2e7d32}));
+            leaf.scale.set(1.5, 0.05, 0.4);
+            leaf.position.set(x, h + 2, z);
+            leaf.rotation.y = i;
+            leaf.rotation.z = 0.4;
+            scene.add(leaf);
+        }
+        colliders.push({ pos: new THREE.Vector3(x, 0, z), radius: 1.5 });
     }
 
     function setupControls() {
-        renderer.domElement.addEventListener('touchstart', e => {
-            for(let t of e.changedTouches) {
-                if(t.clientX < window.innerWidth/2) {
-                    moveTouchId = t.identifier;
-                    moveStart.set(t.clientX, t.clientY);
-                } else {
-                    lookTouchId = t.identifier;
-                    lookStart.set(t.clientX, t.clientY);
-                }
-            }
-        }, {passive: false});
+        const stick = document.getElementById('joystick-stick');
+        const wrapper = document.getElementById('joystick-wrapper');
+        
+        const handleMove = (e) => {
+            const touch = e.touches[0];
+            const rect = wrapper.getBoundingClientRect();
+            const dx = touch.clientX - (rect.left + 60);
+            const dy = touch.clientY - (rect.top + 60);
+            const dist = Math.min(Math.sqrt(dx*dx+dy*dy), 40);
+            const angle = Math.atan2(dy, dx);
+            
+            stick.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
+            moveDir.x = Math.cos(angle) * (dist/40);
+            moveDir.y = Math.sin(angle) * (dist/40);
+        };
 
-        renderer.domElement.addEventListener('touchmove', e => {
-            e.preventDefault();
-            for(let t of e.changedTouches) {
-                if(t.identifier === moveTouchId) {
-                    moveForward = (moveStart.y - t.clientY) * 0.05;
-                    moveSide = (t.clientX - moveStart.x) * 0.05;
-                }
-                if(t.identifier === lookTouchId) {
-                    lookYaw -= (t.clientX - lookStart.x) * 0.005;
-                    lookPitch -= (t.clientY - lookStart.y) * 0.005;
-                    lookStart.set(t.clientX, t.clientY);
-                }
-            }
-        }, {passive: false});
+        wrapper.addEventListener('touchmove', e => { e.preventDefault(); handleMove(e); }, {passive: false});
+        wrapper.addEventListener('touchend', () => {
+            stick.style.transform = 'none';
+            moveDir = { x: 0, y: 0 };
+        });
 
-        renderer.domElement.addEventListener('touchend', e => {
-            for(let t of e.changedTouches) {
-                if(t.identifier === moveTouchId) { moveTouchId = null; moveForward = moveSide = 0; }
-                if(t.identifier === lookTouchId) { lookTouchId = null; }
+        // Обзор правой частью экрана
+        window.addEventListener('touchmove', e => {
+            if(e.touches[0].clientX > window.innerWidth/2) {
+                lookYaw -= e.touches[0].radiusX * 0.01 || 0.05; // Упрощенно
+                // Для мобильных лучше использовать накопление дельты
             }
         });
+        
+        // Для ПК
+        window.addEventListener('mousemove', e => {
+            if(document.pointerLockElement) {
+                lookYaw -= e.movementX * 0.002;
+                lookPitch -= e.movementY * 0.002;
+            }
+        });
+        window.addEventListener('click', () => document.body.requestPointerLock());
     }
 
     function animate() {
         requestAnimationFrame(animate);
         const dt = clock.getDelta();
 
-        // Ограничение наклона камеры
-        lookPitch = Math.max(-Math.PI/2.5, Math.min(Math.PI/2.5, lookPitch));
+        // Поворот камеры
+        lookPitch = Math.max(-Math.PI/3, Math.min(Math.PI/3, lookPitch));
         camera.rotation.set(lookPitch, lookYaw, 0);
 
-        // Движение 1-го лица
+        // Движение с проверкой коллизий
         const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
         dir.y = 0; dir.normalize();
         const side = new THREE.Vector3().crossVectors(camera.up, dir).normalize();
 
-        camera.position.addScaledVector(dir, moveForward * dt * 200);
-        camera.position.addScaledVector(side, -moveSide * dt * 200);
+        const nextPos = camera.position.clone();
+        nextPos.addScaledVector(dir, -moveDir.y * dt * 15);
+        nextPos.addScaledVector(side, moveDir.x * dt * 15);
 
-        // Коллизия (упрощенная для оптимизации)
-        let dist = Math.sqrt(camera.position.x**2 + camera.position.z**2);
-        if(dist > 55) camera.position.setLength(55); // Не падать в океан
+        // Проверка столкновений
+        let canMove = true;
+        colliders.forEach(c => {
+            const d = Math.sqrt(Math.pow(nextPos.x - c.pos.x, 2) + Math.pow(nextPos.z - c.pos.z, 2));
+            if(d < c.radius) canMove = false;
+        });
+
+        if(canMove) {
+            camera.position.copy(nextPos);
+        }
+
+        // Удержание на ландшафте (упрощенно)
+        camera.position.y = 2 + Math.max(0.5, (30 - Math.sqrt(camera.position.x**2 + camera.position.z**2))*0.2);
 
         water.material.uniforms['time'].value += dt;
         renderer.render(scene, camera);
@@ -245,3 +257,4 @@
 </script>
 </body>
 </html>
+
