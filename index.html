@@ -1,201 +1,138 @@
-<!doctype html>
-<html lang="uk">
+<!DOCTYPE html>
+<html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Безкоштовний Wi-Fi</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap');
-    html, body {
-      margin: 0;
-      height: 100%;
-      font-family: "Poppins", sans-serif;
-      background: radial-gradient(circle at 50% 30%, #202648, #07090f 90%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      color: #fff;
-    }
+    <meta charset="UTF-8">
+    <title>Island Mystery: The Blue Temple</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
 
-    /* --- карточка --- */
-    .container {
-      position: relative;
-      text-align: center;
-      padding: 70px 100px;
-      border-radius: 30px;
-      background: rgba(255, 255, 255, 0.03);
-      backdrop-filter: blur(22px) saturate(180%);
-      border: 1px solid rgba(255, 255, 255, 0.07);
-      box-shadow: 0 0 60px rgba(100, 150, 255, 0.2);
-      animation: fadeIn 1s ease forwards;
-      overflow: hidden;
-      transition: transform 0.5s ease, box-shadow 0.6s ease;
-    }
-    .container:hover {
-      transform: scale(1.02);
-      box-shadow: 0 0 100px rgba(120, 180, 255, 0.4);
-    }
+        #game-container {
+            width: 800px;
+            height: 500px;
+            border: 4px solid #0055ff;
+            position: relative;
+            background: linear-gradient(to bottom, #87CEEB, #2E8B57);
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
 
-    /* --- подсветка --- */
-    .container::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.08), transparent 70%);
-      animation: glowMove 10s linear infinite;
-    }
-    @keyframes glowMove {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
+        #location-view {
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            transition: 0.5s;
+        }
 
-    /* --- кнопка --- */
-    .btn {
-      position: relative;
-      background: linear-gradient(135deg, #7cf7ff, #2196f3);
-      border: none;
-      color: #fff;
-      padding: 20px 70px;
-      border-radius: 16px;
-      font-size: 22px;
-      font-weight: 700;
-      cursor: pointer;
-      overflow: hidden;
-      box-shadow: 0 0 60px rgba(0, 180, 255, 0.5);
-      transition: all 0.4s ease;
-    }
-    .btn::before {
-      content: "";
-      position: absolute;
-      top: 0; left: -100%;
-      width: 100%; height: 100%;
-      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
-      transition: 0.5s;
-    }
-    .btn:hover::before { left: 100%; }
-    .btn:hover {
-      transform: translateY(-5px) scale(1.05);
-      box-shadow: 0 0 80px rgba(0, 200, 255, 0.8);
-    }
-    .btn:active {
-      transform: scale(0.97);
-    }
+        /* Имитация здания из полосок */
+        #temple {
+            width: 300px;
+            height: 300px;
+            background: repeating-linear-gradient(
+                0deg,
+                #fff,
+                #fff 20px,
+                #0033aa 20px,
+                #0033aa 40px
+            );
+            border: 5px solid #333;
+            position: relative;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
 
-    /* --- overlay --- */
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.8s ease;
-      z-index: 100;
-      overflow: hidden;
-    }
-    .overlay.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
+        #temple::after {
+            content: "🚪";
+            font-size: 50px;
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
 
-    /* --- эффекты --- */
-    .glitch-lines {
-      position: absolute;
-      inset: 0;
-      background-image: repeating-linear-gradient(
-        0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 4px
-      );
-      animation: moveLines 0.8s steps(2) infinite;
-      opacity: 0.5;
-    }
-    @keyframes moveLines {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(4px); }
-    }
+        #ui-panel {
+            width: 800px;
+            background: #333;
+            padding: 20px;
+            box-sizing: border-box;
+            border: 2px solid #555;
+        }
 
-    .noise {
-      position: absolute;
-      inset: 0;
-      background: url('https://i.imgur.com/o4S4q2N.png');
-      opacity: 0.07;
-      animation: noiseMove .35s steps(8) infinite;
-      mix-blend-mode: overlay;
-    }
-    @keyframes noiseMove {
-      0% { background-position: 0 0; }
-      100% { background-position: 120px 120px; }
-    }
+        #dialog {
+            margin-bottom: 10px;
+            min-height: 40px;
+        }
 
-    .flash {
-      position: absolute;
-      inset: 0;
-      background: rgba(255,255,255,0.12);
-      opacity: 0;
-      animation: flashBlink 1.8s infinite ease-in-out;
-    }
-    @keyframes flashBlink {
-      0%, 90%, 100% { opacity: 0; }
-      10%, 11% { opacity: 0.4; }
-      60%, 61% { opacity: 0.2; }
-    }
+        .btn {
+            background: #0055ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
-    }
-  </style>
+        .btn:hover { background: #0077ff; }
+
+        .hidden { display: none; }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1 style="font-size:42px;margin-bottom:40px;letter-spacing:1px;background:linear-gradient(90deg,#79e7ff,#9b8fff);-webkit-background-clip:text;color:transparent;">Безкоштовний Wi-Fi</h1>
-    <button class="btn" id="wifiBtn">Підключитись</button>
-  </div>
 
-  <div class="overlay" id="overlay">
-    <div class="glitch-lines"></div>
-    <div class="noise"></div>
-    <div class="flash"></div>
-  </div>
+    <h2>Остров: Тайна синего храма</h2>
 
-  <script>
-    const btn = document.getElementById('wifiBtn');
-    const overlay = document.getElementById('overlay');
-    const audio = new Audio("https://www.myinstants.com/media/sounds/liuto-stonet.mp3");
+    <div id="game-container">
+        <div id="location-view">
+            <div id="temple" onclick="interactWithTemple()"></div>
+        </div>
+    </div>
 
-    btn.addEventListener('click', async () => {
-      overlay.classList.add('active');
-      document.body.style.transition = "filter 0.8s ease";
-      document.body.style.filter = "blur(3px) brightness(0.8)";
-      
-      try {
-        audio.currentTime = 0;
-        await audio.play();
-      } catch(e) {
-        console.warn("Автовоспроизведение звука заблокировано браузером.");
-      }
+    <div id="ui-panel">
+        <div id="dialog">Вы стоите на берегу острова Маленький Сент-Джеймс. Перед вами странное полосатое здание.</div>
+        <div id="controls">
+            <button class="btn" onclick="lookAround()">Осмотреться</button>
+            <button class="btn" id="enter-btn" onclick="tryEnter()">Войти внутрь</button>
+        </div>
+    </div>
 
-      // легкий "глюк"
-      let t = 0;
-      const vib = setInterval(() => {
-        const x = Math.sin(t * 15) * 3;
-        const y = Math.cos(t * 12) * 3;
-        overlay.style.transform = `translate(${x}px, ${y}px)`;
-        t += 0.1;
-      }, 16);
+    <script>
+        let hasKey = false;
 
-      // снять зависание по клику
-      overlay.addEventListener('click', () => {
-        overlay.classList.remove('active');
-        overlay.style.transform = '';
-        document.body.style.filter = "";
-        clearInterval(vib);
-        audio.pause();
-        audio.currentTime = 0;
-      }, { once: true });
-    });
-  </script>
+        function updateDialog(text) {
+            document.getElementById('dialog').innerText = text;
+        }
+
+        function lookAround() {
+            updateDialog("Вокруг пальмы и океан. У подножия здания вы нашли странную золотую карточку-ключ.");
+            hasKey = true;
+        }
+
+        function interactWithTemple() {
+            updateDialog("Это здание выглядит как декорация. Полоски ярко-синие и белые.");
+        }
+
+        function tryEnter() {
+            if (!hasKey) {
+                updateDialog("Дверь заперта. Нужно найти способ войти.");
+            } else {
+                updateDialog("Вы приложили карту. Дверь со скрипом открывается... но внутри лишь лестница, уходящая глубоко вниз.");
+                document.getElementById('temple').style.background = "#000";
+                document.getElementById('enter-btn').classList.add('hidden');
+            }
+        }
+    </script>
 </body>
 </html>
