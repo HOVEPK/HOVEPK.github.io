@@ -2,22 +2,30 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>St. James: Ultra Realistic First Person</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
+    <title>Epstein Island Ultra: Pro Edition</title>
     <style>
-        body { margin: 0; background: #000; overflow: hidden; font-family: 'Inter', sans-serif; cursor: crosshair; }
-        #crosshair {
-            position: absolute; top: 50%; left: 50%; width: 10px; height: 10px;
-            border: 1px solid rgba(255,255,255,0.5); border-radius: 50%;
-            transform: translate(-50%, -50%); pointer-events: none;
+        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; touch-action: none; }
+        canvas { display: block; }
+        #ui-overlay {
+            position: absolute; top: 10px; left: 10px; color: #fff;
+            pointer-events: none; text-shadow: 1px 1px 2px #000; font-size: 12px;
         }
-        #ui { position: absolute; bottom: 20px; left: 20px; color: white; text-shadow: 2px 2px 4px #000; pointer-events: none; }
+        /* Индикаторы зон управления */
+        #touch-zones {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; pointer-events: none;
+        }
+        .zone { flex: 1; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 30px; color: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.03); }
     </style>
 </head>
 <body>
 
-<div id="crosshair"></div>
-<div id="ui">Кликните, чтобы войти в режим 1-го лица (WASD + Мышь)</div>
+<div id="ui-overlay">LITTLE ST. JAMES • 1ST PERSON • ULTRA</div>
+<div id="touch-zones">
+    <div class="zone">ДВИЖЕНИЕ (ЛЕВО)</div>
+    <div class="zone">ОБЗОР (ПРАВО)</div>
+</div>
 
 <script type="importmap">
     {
@@ -30,14 +38,16 @@
 
 <script type="module">
     import * as THREE from 'three';
-    import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
     import { Water } from 'three/addons/objects/Water.js';
     import { Sky } from 'three/addons/objects/Sky.js';
 
-    let scene, camera, renderer, controls, water, clock;
-    let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
-    let velocity = new THREE.Vector3();
-    let direction = new THREE.Vector3();
+    let scene, camera, renderer, water, clock;
+    let moveForward = 0, moveSide = 0;
+    let lookYaw = 0, lookPitch = 0;
+    
+    // Переменные для тач-управления
+    let moveTouchId = null, lookTouchId = null;
+    let moveStart = new THREE.Vector2(), lookStart = new THREE.Vector2();
 
     init();
 
@@ -45,173 +55,193 @@
         scene = new THREE.Scene();
         clock = new THREE.Clock();
 
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
-        camera.position.set(30, 1.7, 30); // Рост человека
+        camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera.rotation.order = 'YXZ'; // Важно для корректного вращения 1-го лица
+        camera.position.set(40, 5, 40);
 
-        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.VSMShadowMap;
         document.body.appendChild(renderer.domElement);
 
-        // Управление 1-го лица
-        controls = new PointerLockControls(camera, document.body);
-        document.body.addEventListener('click', () => controls.lock());
+        setupSky();
+        setupWater();
+        createIsland();
+        setupControls();
 
-        setupLighting();
-        setupEnvironment();
-        createDetailedIsland();
-        
-        // Пальмы (расставляем по острову)
-        for(let i = 0; i < 25; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const dist = 15 + Math.random() * 30;
-            createRealisticPalm(Math.cos(angle)*dist, Math.sin(angle)*dist);
-        }
-
-        setupInput();
+        window.addEventListener('resize', onWindowResize);
         animate();
     }
 
-    function setupLighting() {
+    function setupSky() {
         const sky = new Sky();
         sky.scale.setScalar(450000);
         scene.add(sky);
-
         const sun = new THREE.Vector3();
-        const phi = THREE.MathUtils.degToRad(85);
-        const theta = THREE.MathUtils.degToRad(180);
-        sun.setFromSphericalCoords(1, phi, theta);
+        const phi = THREE.MathUtils.degToRad(87); 
+        sun.setFromSphericalCoords(1, phi, Math.PI);
         sky.material.uniforms['sunPosition'].value.copy(sun);
 
-        const ambient = new THREE.AmbientLight(0xffffff, 0.5);
-        scene.add(ambient);
-
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
-        directionalLight.position.copy(sun).multiplyScalar(100);
-        directionalLight.castShadow = true;
-        directionalLight.shadow.mapSize.set(2048, 2048);
-        scene.add(directionalLight);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        const light = new THREE.DirectionalLight(0xffffff, 1.2);
+        light.position.set(50, 50, 50);
+        light.castShadow = true;
+        scene.add(light);
     }
 
-    function setupEnvironment() {
-        const waterGeo = new THREE.PlaneGeometry(10000, 10000);
-        water = new Water(waterGeo, {
-            textureWidth: 1024, textureHeight: 1024,
+    function setupWater() {
+        water = new Water(new THREE.PlaneGeometry(1000, 1000), {
+            textureWidth: 512, textureHeight: 512,
             waterNormals: new THREE.TextureLoader().load('https://threejs.org/examples/textures/waternormals.jpg', t => t.wrapS = t.wrapT = THREE.RepeatWrapping),
-            sunDirection: new THREE.Vector3(),
-            sunColor: 0xffffff,
-            waterColor: 0x001e0f,
-            distortionScale: 3.7,
+            sunDirection: new THREE.Vector3(1,1,1).normalize(),
+            sunColor: 0xffffff, waterColor: 0x003344, distortionScale: 4
         });
         water.rotation.x = -Math.PI / 2;
+        water.position.y = 0.5;
         scene.add(water);
     }
 
-    function createRealisticPalm(x, z) {
-        const palmGroup = new THREE.Group();
-        
-        // Ствол (изогнутый)
-        const points = [];
-        for (let i = 0; i < 10; i++) {
-            points.push(new THREE.Vector3(Math.sin(i * 0.2) * 0.5, i * 0.8, 0));
+    function createIsland() {
+        // РЕАЛИСТИЧНЫЙ ЛАНДШАФТ (Холм)
+        const size = 120;
+        const geo = new THREE.PlaneGeometry(size, size, 64, 64);
+        const pos = geo.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+            let x = pos.getX(i), y = pos.getY(i);
+            let dist = Math.sqrt(x*x + y*y);
+            // Создаем холм в центре для здания
+            let h = Math.max(0, (25 - dist) * 0.4); 
+            // Добавляем неровности (шум)
+            h += Math.sin(x*0.2) * Math.cos(y*0.2) * 1.5;
+            pos.setZ(i, h);
         }
-        const trunkGeo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 20, 0.2, 8, false);
-        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 0.9 });
-        const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-        trunk.castShadow = true;
-        palmGroup.add(trunk);
-
-        // Листья (пышные)
-        const leafMat = new THREE.MeshStandardMaterial({ color: 0x2e7d32, side: THREE.DoubleSide, roughness: 0.6 });
-        for (let i = 0; i < 12; i++) {
-            const leafGeo = new THREE.SphereGeometry(2, 8, 2);
-            leafGeo.scale(1.5, 0.05, 0.4);
-            const leaf = new THREE.Mesh(leafGeo, leafMat);
-            leaf.position.y = 7.2;
-            leaf.rotation.y = (i * Math.PI * 2) / 12;
-            leaf.rotation.z = 0.4;
-            palmGroup.add(leaf);
-        }
-
-        palmGroup.position.set(x, -0.5, z);
-        scene.add(palmGroup);
-    }
-
-    function createDetailedIsland() {
-        // Здание (на возвышенности)
-        const temple = new THREE.Group();
-        for(let i = 0; i < 20; i++) {
-            const box = new THREE.Mesh(
-                new THREE.BoxGeometry(12, 0.4, 12),
-                new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0xffffff : 0x0044ff, roughness: 0.2 })
-            );
-            box.position.y = i * 0.4;
-            box.castShadow = true;
-            temple.add(box);
-        }
-        const dome = new THREE.Mesh(
-            new THREE.SphereGeometry(4.5, 32, 32, 0, Math.PI*2, 0, Math.PI/2),
-            new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 1, roughness: 0.1 })
-        );
-        dome.position.y = 8;
-        temple.add(dome);
-        scene.add(temple);
-
-        // Песок
-        const islandGeo = new THREE.CylinderGeometry(60, 70, 4, 64);
-        const islandMat = new THREE.MeshStandardMaterial({ color: 0xe3c1a1, roughness: 1 });
-        const island = new THREE.Mesh(islandGeo, islandMat);
-        island.position.y = -2;
+        geo.computeVertexNormals();
+        const island = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xe3c1a1, roughness: 1 }));
+        island.rotation.x = -Math.PI / 2;
         island.receiveShadow = true;
         scene.add(island);
+
+        // Храм на вершине холма
+        createDetailedTemple(0, 8, 0);
+
+        // Улучшенные пальмы
+        for(let i = 0; i < 30; i++) {
+            let a = Math.random() * Math.PI * 2;
+            let r = 25 + Math.random() * 25;
+            createPalm(Math.cos(a)*r, Math.sin(a)*r);
+        }
     }
 
-    function setupInput() {
-        const onKeyDown = (e) => {
-            switch (e.code) {
-                case 'KeyW': moveForward = true; break;
-                case 'KeyA': moveLeft = true; break;
-                case 'KeyS': moveBackward = true; break;
-                case 'KeyD': moveRight = true; break;
+    function createPalm(x, z) {
+        const group = new THREE.Group();
+        // Ствол
+        const trunkGeo = new THREE.CylinderGeometry(0.15, 0.3, 7, 8);
+        const trunk = new THREE.Mesh(trunkGeo, new THREE.MeshStandardMaterial({color: 0x5d4037}));
+        trunk.position.y = 3.5;
+        trunk.rotation.z = (Math.random()-0.5) * 0.2;
+        group.add(trunk);
+        
+        // Листья (Детализированные)
+        for(let i = 0; i < 10; i++) {
+            const leaf = new THREE.Mesh(
+                new THREE.SphereGeometry(2.5, 6, 2),
+                new THREE.MeshStandardMaterial({color: 0x1b5e20, side: THREE.DoubleSide})
+            );
+            leaf.scale.set(1.4, 0.02, 0.3);
+            leaf.position.y = 7;
+            leaf.rotation.y = (i * Math.PI * 2) / 10;
+            leaf.rotation.z = 0.5;
+            group.add(leaf);
+        }
+        group.position.set(x, 1, z);
+        scene.add(group);
+    }
+
+    function createDetailedTemple(x, y, z) {
+        const temple = new THREE.Group();
+        for(let i = 0; i < 15; i++) {
+            const stripe = new THREE.Mesh(
+                new THREE.BoxGeometry(10, 0.4, 10),
+                new THREE.MeshStandardMaterial({ color: i%2===0?0xffffff:0x0044ff })
+            );
+            stripe.position.y = i * 0.4;
+            stripe.castShadow = true;
+            temple.add(stripe);
+        }
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 16, 0, 6.3, 0, 1.6), new THREE.MeshStandardMaterial({color: 0xffd700, metalness: 0.9, roughness: 0.1}));
+        dome.position.y = 6;
+        temple.add(dome);
+        temple.position.set(x, y, z);
+        scene.add(temple);
+    }
+
+    function setupControls() {
+        renderer.domElement.addEventListener('touchstart', e => {
+            for(let t of e.changedTouches) {
+                if(t.clientX < window.innerWidth/2) {
+                    moveTouchId = t.identifier;
+                    moveStart.set(t.clientX, t.clientY);
+                } else {
+                    lookTouchId = t.identifier;
+                    lookStart.set(t.clientX, t.clientY);
+                }
             }
-        };
-        const onKeyUp = (e) => {
-            switch (e.code) {
-                case 'KeyW': moveForward = false; break;
-                case 'KeyA': moveLeft = false; break;
-                case 'KeyS': moveBackward = false; break;
-                case 'KeyD': moveRight = false; break;
+        }, {passive: false});
+
+        renderer.domElement.addEventListener('touchmove', e => {
+            e.preventDefault();
+            for(let t of e.changedTouches) {
+                if(t.identifier === moveTouchId) {
+                    moveForward = (moveStart.y - t.clientY) * 0.05;
+                    moveSide = (t.clientX - moveStart.x) * 0.05;
+                }
+                if(t.identifier === lookTouchId) {
+                    lookYaw -= (t.clientX - lookStart.x) * 0.005;
+                    lookPitch -= (t.clientY - lookStart.y) * 0.005;
+                    lookStart.set(t.clientX, t.clientY);
+                }
             }
-        };
-        document.addEventListener('keydown', onKeyDown);
-        document.addEventListener('keyup', onKeyUp);
+        }, {passive: false});
+
+        renderer.domElement.addEventListener('touchend', e => {
+            for(let t of e.changedTouches) {
+                if(t.identifier === moveTouchId) { moveTouchId = null; moveForward = moveSide = 0; }
+                if(t.identifier === lookTouchId) { lookTouchId = null; }
+            }
+        });
     }
 
     function animate() {
         requestAnimationFrame(animate);
-        const delta = clock.getDelta();
+        const dt = clock.getDelta();
 
-        if (controls.isLocked) {
-            velocity.x -= velocity.x * 10.0 * delta;
-            velocity.z -= velocity.z * 10.0 * delta;
+        // Ограничение наклона камеры
+        lookPitch = Math.max(-Math.PI/2.5, Math.min(Math.PI/2.5, lookPitch));
+        camera.rotation.set(lookPitch, lookYaw, 0);
 
-            direction.z = Number(moveForward) - Number(moveBackward);
-            direction.x = Number(moveRight) - Number(moveLeft);
-            direction.normalize();
+        // Движение 1-го лица
+        const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+        dir.y = 0; dir.normalize();
+        const side = new THREE.Vector3().crossVectors(camera.up, dir).normalize();
 
-            if (moveForward || moveBackward) velocity.z -= direction.z * 150.0 * delta;
-            if (moveLeft || moveRight) velocity.x -= direction.x * 150.0 * delta;
+        camera.position.addScaledVector(dir, moveForward * dt * 200);
+        camera.position.addScaledVector(side, -moveSide * dt * 200);
 
-            controls.moveRight(-velocity.x * delta);
-            controls.moveForward(-velocity.z * delta);
-        }
+        // Коллизия (упрощенная для оптимизации)
+        let dist = Math.sqrt(camera.position.x**2 + camera.position.z**2);
+        if(dist > 55) camera.position.setLength(55); // Не падать в океан
 
-        water.material.uniforms['time'].value += delta;
+        water.material.uniforms['time'].value += dt;
         renderer.render(scene, camera);
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
     }
 </script>
 </body>
 </html>
-
