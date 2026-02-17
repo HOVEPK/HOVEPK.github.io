@@ -3,30 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>St. James Island: Ultra Realism</title>
+    <title>St. James: Ultra Realism + Sound</title>
     <style>
         body { margin: 0; background: #000; overflow: hidden; font-family: 'Inter', sans-serif; }
-        #overlay { position: absolute; bottom: 30px; left: 30px; display: flex; gap: 20px; align-items: center; }
-        
-        /* Профессиональный джойстик */
+        #overlay { position: absolute; bottom: 30px; left: 30px; }
         #joy-base {
-            width: 120px; height: 120px; background: rgba(255,255,255,0.05);
+            width: 100px; height: 100px; background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.2); border-radius: 50%;
             backdrop-filter: blur(10px); position: relative;
         }
         #joy-stick {
-            width: 50px; height: 50px; background: #fff; border-radius: 50%;
-            position: absolute; top: 35px; left: 35px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            width: 40px; height: 40px; background: #fff; border-radius: 50%;
+            position: absolute; top: 30px; left: 30px;
         }
-        #ui-text { position: absolute; top: 30px; right: 30px; color: rgba(255,255,255,0.5); font-size: 12px; pointer-events: none; }
+        #hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; text-align: center; pointer-events: none; opacity: 0.8; }
     </style>
 </head>
 <body>
 
-<div id="ui-text">ULTRA GRAPHICS ENABLED • 60 FPS</div>
-<div id="overlay">
-    <div id="joy-base"><div id="joy-stick"></div></div>
-</div>
+<div id="hint" id="start-hint">Нажмите на экран для звука и управления</div>
+<div id="overlay"><div id="joy-base"><div id="joy-stick"></div></div></div>
 
 <script type="importmap">
     {
@@ -41,181 +37,174 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { Water } from 'three/addons/objects/Water.js';
-    import { Sky } from 'three/addons/objects/Sky.js';
 
-    let scene, camera, renderer, water, controls;
+    let scene, camera, renderer, water, controls, clock;
     let moveForward = 0, moveSide = 0;
-    const clock = new THREE.Clock();
+    let audioContext, seaSound, stepSound;
 
     init();
 
-    function init() {
+    async function init() {
         scene = new THREE.Scene();
+        clock = new THREE.Clock();
 
-        // 1. КАМЕРА (FOV 60 для реалистичного взгляда)
-        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
-        camera.position.set(-60, 20, 60);
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera.position.set(40, 5, 40);
 
-        // 2. РЕНДЕРЕР (Максимальные настройки)
-        renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 0.5;
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.VSMShadowMap;
         document.body.appendChild(renderer.domElement);
 
-        // 3. НЕБО И ОСВЕЩЕНИЕ
-        const sky = new Sky();
-        sky.scale.setScalar(450000);
-        scene.add(sky);
+        // Свет
+        const sun = new THREE.DirectionalLight(0xffffff, 2);
+        sun.position.set(50, 50, 50);
+        sun.castShadow = true;
+        scene.add(sun);
+        scene.add(new THREE.AmbientLight(0x404040, 1));
 
-        const sun = new THREE.Vector3();
-        const uniforms = sky.material.uniforms;
-        uniforms['turbidity'].value = 2;
-        uniforms['rayleigh'].value = 1;
-        uniforms['mieCoefficient'].value = 0.005;
-        uniforms['mieDirectionalG'].value = 0.8;
-
-        const phi = THREE.MathUtils.degToRad(88); // Закатное солнце
-        const theta = THREE.MathUtils.degToRad(180);
-        sun.setFromSphericalCoords(1, phi, theta);
-        uniforms['sunPosition'].value.copy(sun);
-
-        const mainLight = new THREE.DirectionalLight(0xffffff, 2);
-        mainLight.position.copy(sun).multiplyScalar(100);
-        mainLight.castShadow = true;
-        mainLight.shadow.camera.left = -100;
-        mainLight.shadow.camera.right = 100;
-        mainLight.shadow.camera.top = 100;
-        mainLight.shadow.camera.bottom = -100;
-        mainLight.shadow.mapSize.set(4096, 4096);
-        scene.add(mainLight);
-
-        // 4. ОКЕАН
-        const waterGeo = new THREE.PlaneGeometry(10000, 10000);
+        // Вода
+        const waterGeo = new THREE.PlaneGeometry(2000, 2000);
         water = new Water(waterGeo, {
-            textureWidth: 1024, textureHeight: 1024,
+            textureWidth: 512, textureHeight: 512,
             waterNormals: new THREE.TextureLoader().load('https://threejs.org/examples/textures/waternormals.jpg', t => t.wrapS = t.wrapT = THREE.RepeatWrapping),
-            sunDirection: sun,
+            sunDirection: sun.position.clone().normalize(),
             sunColor: 0xffffff,
-            waterColor: 0x001e0f,
-            distortionScale: 4.0,
+            waterColor: 0x004d4d,
+            distortionScale: 3.7,
         });
         water.rotation.x = -Math.PI / 2;
         scene.add(water);
 
-        // 5. РЕАЛИСТИЧНЫЙ ЛАНДШАФТ
-        createIsland();
+        // Остров (Ландшафт)
+        const islandGeo = new THREE.CylinderGeometry(50, 55, 4, 64);
+        const islandMat = new THREE.MeshStandardMaterial({ color: 0xedc9af });
+        const island = new THREE.Mesh(islandGeo, islandMat);
+        island.position.y = -1.5;
+        island.receiveShadow = true;
+        scene.add(island);
 
-        // 6. УПРАВЛЕНИЕ (Touch & Mouse)
+        // Растительность (Пальмы)
+        for(let i = 0; i < 15; i++) {
+            createPalm(
+                Math.random() * 60 - 30, 
+                Math.random() * 60 - 30
+            );
+        }
+
+        // Храм
+        createTemple();
+
+        // Управление
         controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.maxPolarAngle = Math.PI / 2.1; // Запрет смотреть под воду
-        
         setupJoystick();
+
+        // Звуковая инициализация по клику
+        window.addEventListener('click', initAudio, { once: true });
+
         animate();
     }
 
-    function createIsland() {
-        // Форма острова (вытянутая, как Сент-Джеймс)
-        const shape = new THREE.Shape();
-        shape.moveTo(-30, -50);
-        shape.bezierCurveTo(-40, 0, -20, 40, 30, 50);
-        shape.bezierCurveTo(60, 40, 50, -20, 20, -60);
-        shape.closePath();
-
-        const extrudeSettings = { depth: 5, bevelEnabled: true, bevelThickness: 2, bevelSize: 2 };
-        const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-        const material = new THREE.MeshStandardMaterial({ 
-            color: 0x8b7355, 
-            roughness: 0.9,
-            metalness: 0.0
-        });
-
-        const island = new THREE.Mesh(geometry, material);
-        island.rotation.x = -Math.PI / 2;
-        island.position.y = -2;
-        island.receiveShadow = true;
-        island.castShadow = true;
-        scene.add(island);
-
-        // Здание Храма на возвышенности
-        createTemple(25, 3, -10);
-    }
-
-    function createTemple(x, y, z) {
+    function createPalm(x, z) {
+        if(Math.abs(x) < 10 && Math.abs(z) < 10) return; // Не спавнить в здании
         const group = new THREE.Group();
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.4, 6), new THREE.MeshStandardMaterial({color: 0x654321}));
+        trunk.position.y = 3;
+        group.add(trunk);
         
-        // Стены с четкими полосками
-        for(let i = 0; i < 16; i++) {
-            const stripe = new THREE.Mesh(
-                new THREE.BoxGeometry(10, 0.4, 10),
-                new THREE.MeshStandardMaterial({ 
-                    color: i % 2 === 0 ? 0xffffff : 0x0033cc,
-                    roughness: 0.3
-                })
-            );
-            stripe.position.y = i * 0.4;
-            stripe.castShadow = true;
-            group.add(stripe);
+        for(let i = 0; i < 5; i++) {
+            const leaf = new THREE.Mesh(new THREE.SphereGeometry(2, 8, 2), new THREE.MeshStandardMaterial({color: 0x228b22}));
+            leaf.scale.set(1.5, 0.1, 0.5);
+            leaf.position.y = 6;
+            leaf.rotation.y = (i * Math.PI * 2) / 5;
+            group.add(leaf);
         }
-
-        // Терраса и Золотой купол
-        const dome = new THREE.Mesh(
-            new THREE.SphereGeometry(3.5, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2),
-            new THREE.MeshStandardMaterial({ color: 0xffcc00, metalness: 1, roughness: 0.1 })
-        );
-        dome.position.y = 16 * 0.4;
-        group.add(dome);
-
-        group.position.set(x, y, z);
+        group.position.set(x, 0, z);
         scene.add(group);
     }
 
-    function setupJoystick() {
-        const stick = document.getElementById('joy-stick');
-        const base = document.getElementById('joy-base');
+    function createTemple() {
+        const temple = new THREE.Group();
+        for(let i = 0; i < 20; i++) {
+            const stripe = new THREE.Mesh(
+                new THREE.BoxGeometry(10, 0.3, 10),
+                new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0xffffff : 0x0033cc })
+            );
+            stripe.position.y = i * 0.3;
+            stripe.castShadow = true;
+            temple.add(stripe);
+        }
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 16, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshStandardMaterial({color: 0xffd700, metalness: 1}));
+        dome.position.y = 6;
+        temple.add(dome);
+        scene.add(temple);
+    }
+
+    function initAudio() {
+        document.getElementById('hint').style.display = 'none';
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
         
-        const handleMove = (e) => {
-            const touch = e.touches ? e.touches[0] : e;
-            const rect = base.getBoundingClientRect();
-            const centerX = rect.left + 60, centerY = rect.top + 60;
-            const dx = touch.clientX - centerX, dy = touch.clientY - centerY;
-            const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 40);
-            const angle = Math.atan2(dy, dx);
+        // Море (Белый шум с фильтром)
+        const bufferSize = 2 * audioContext.sampleRate;
+        const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
 
-            stick.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
-            moveSide = (Math.cos(angle) * dist) / 40;
-            moveForward = -(Math.sin(angle) * dist) / 40;
-        };
+        const noise = audioContext.createBufferSource();
+        noise.buffer = noiseBuffer;
+        noise.loop = true;
+        
+        const filter = audioContext.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 400;
 
-        base.addEventListener('touchstart', e => e.preventDefault());
-        base.addEventListener('touchmove', handleMove);
-        base.addEventListener('touchend', () => {
-            stick.style.transform = 'translate(0,0)';
-            moveForward = moveSide = 0;
-        });
+        const gainSea = audioContext.createGain();
+        gainSea.gain.value = 0.2;
+
+        noise.connect(filter).connect(gainSea).connect(audioContext.destination);
+        noise.start();
     }
 
     function animate() {
         requestAnimationFrame(animate);
         const delta = clock.getDelta();
 
-        // Реалистичное перемещение относительно взгляда камеры
-        const direction = new THREE.Vector3();
-        camera.getWorldDirection(direction);
-        direction.y = 0; direction.normalize();
+        // Движение
+        const dir = new THREE.Vector3();
+        camera.getWorldDirection(dir);
+        dir.y = 0; dir.normalize();
+        const side = new THREE.Vector3().crossVectors(camera.up, dir).normalize();
 
-        const sideDir = new THREE.Vector3().crossVectors(camera.up, direction).normalize();
-
-        camera.position.addScaledVector(direction, moveForward * 0.5);
-        camera.position.addScaledVector(sideDir, moveSide * 0.5);
+        if(moveForward || moveSide) {
+            camera.position.addScaledVector(dir, moveForward * 0.3);
+            camera.position.addScaledVector(side, moveSide * 0.3);
+            // Тут можно добавить триггер звука шагов
+        }
 
         water.material.uniforms['time'].value += delta;
         controls.update();
         renderer.render(scene, camera);
+    }
+
+    function setupJoystick() {
+        const base = document.getElementById('joy-base');
+        const stick = document.getElementById('joy-stick');
+        base.addEventListener('touchmove', (e) => {
+            const t = e.touches[0];
+            const r = base.getBoundingClientRect();
+            const x = t.clientX - (r.left + 50), y = t.clientY - (r.top + 50);
+            const d = Math.min(Math.sqrt(x*x+y*y), 40);
+            const a = Math.atan2(y, x);
+            stick.style.transform = `translate(${Math.cos(a)*d}px, ${Math.sin(a)*d}px)`;
+            moveSide = Math.cos(a) * (d/40);
+            moveForward = -Math.sin(a) * (d/40);
+        });
+        base.addEventListener('touchend', () => {
+            stick.style.transform = 'none';
+            moveForward = moveSide = 0;
+        });
     }
 </script>
 </body>
