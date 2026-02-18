@@ -2,165 +2,197 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>3D Острів: Перша особа</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>3D Острів: Джойстик та Храм</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #87CEEB; touch-action: none; }
         canvas { display: block; }
-        #ui {
+        
+        /* Стиль джойстика */
+        #joystick-container {
             position: absolute;
-            bottom: 20px;
-            width: 100%;
-            text-align: center;
-            color: white;
-            font-family: sans-serif;
-            pointer-events: none;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            bottom: 40px;
+            left: 40px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            touch-action: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+        #joystick-knob {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
     </style>
 </head>
 <body>
 
-    <div id="ui">Затисніть зверху, щоб іти вперед <br> Тягніть знизу, щоб озиратися</div>
+    <div id="joystick-container">
+        <div id="joystick-knob"></div>
+    </div>
 
     <script type="importmap">
         {
             "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
             }
         }
     </script>
 
     <script type="module">
         import * as THREE from 'three';
-        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
-        // 1. Сцена та Камера
+        // 1. СЦЕНА ТА КАМЕРА
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x87CEEB);
-        scene.fog = new THREE.Fog(0x87CEEB, 0, 50); // Туман для реалістичності горизонту
+        scene.fog = new THREE.Fog(0x87CEEB, 1, 40);
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.y = 1.6; // Ріст людини
-        camera.position.z = 5;
+        camera.position.set(0, 1.6, 12); // Ставимо гравця трохи далі від центру
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
 
-        // 2. Світло
-        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
         const sun = new THREE.DirectionalLight(0xffffff, 1);
         sun.position.set(10, 20, 10);
         scene.add(sun);
 
-        // 3. Острів (Колізійна зона)
-        const islandGeo = new THREE.CylinderGeometry(8, 10, 2, 32);
+        // 2. ОСТРІВ ТА ОКЕАН
+        const islandGeo = new THREE.CylinderGeometry(15, 17, 2, 64);
         const islandMat = new THREE.MeshStandardMaterial({ color: 0xedc9af });
         const island = new THREE.Mesh(islandGeo, islandMat);
         island.position.y = -1;
         scene.add(island);
 
-        // Об'єкт на острові (Скеля для перевірки колізії)
-        const rockGeo = new THREE.DodecahedronGeometry(1.5);
-        const rockMat = new THREE.MeshStandardMaterial({ color: 0x808080 });
-        const rock = new THREE.Mesh(rockGeo, rockMat);
-        rock.position.set(3, 0.5, -2);
-        scene.add(rock);
-
-        // 4. Океан
         const waterGeo = new THREE.PlaneGeometry(1000, 1000);
-        const waterMat = new THREE.MeshStandardMaterial({ color: 0x0044ff, transparent: true, opacity: 0.6 });
+        const waterMat = new THREE.MeshStandardMaterial({ color: 0x0066cc, transparent: true, opacity: 0.7 });
         const water = new THREE.Mesh(waterGeo, waterMat);
         water.rotation.x = -Math.PI / 2;
         water.position.y = -1.1;
         scene.add(water);
 
-        // 5. Керування
-        let moveForward = false;
-        let moveBackward = false;
-        const velocity = new THREE.Vector3();
-        const direction = new THREE.Vector3();
+        // 3. БУДІВЛЯ (Храм з біло-блакитними смугами)
+        function createBuilding() {
+            const group = new THREE.Group();
+            
+            // Основна коробка (біла)
+            const baseGeo = new THREE.BoxGeometry(6, 4, 6);
+            const baseMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const base = new THREE.Mesh(baseGeo, baseMat);
+            base.position.y = 1;
+            group.add(base);
 
-        // Обробка торкань для мобільних
-        window.addEventListener('touchstart', (e) => {
-            const touchY = e.touches[0].clientY;
-            if (touchY < window.innerHeight / 2) moveForward = true;
-            else moveBackward = true;
-        });
-        window.addEventListener('touchend', () => {
-            moveForward = false;
-            moveBackward = false;
+            // Блакитні смуги (декор)
+            for (let i = 0; i < 4; i++) {
+                const stripeGeo = new THREE.BoxGeometry(6.1, 0.4, 6.1);
+                const stripeMat = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+                const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+                stripe.position.y = 0.5 + (i * 0.8);
+                group.add(stripe);
+            }
+
+            // Золотий купол
+            const domeGeo = new THREE.SphereGeometry(2, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+            const domeMat = new THREE.MeshStandardMaterial({ color: 0xffd700 });
+            const dome = new THREE.Mesh(domeGeo, domeMat);
+            dome.position.y = 3;
+            group.add(dome);
+
+            return group;
+        }
+
+        const temple = createBuilding();
+        temple.position.set(0, 0, 0);
+        scene.add(temple);
+
+        // 4. ДЖОЙСТИК ТА КЕРУВАННЯ
+        let moveX = 0, moveZ = 0;
+        const knob = document.getElementById('joystick-knob');
+        const container = document.getElementById('joystick-container');
+        let rect = container.getBoundingClientRect();
+        let centerX = rect.left + rect.width / 2;
+        let centerY = rect.top + rect.height / 2;
+
+        container.addEventListener('touchmove', (e) => {
+            const touch = e.touches[0];
+            let dx = touch.clientX - centerX;
+            let dy = touch.clientY - centerY;
+            const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 50);
+            const angle = Math.atan2(dy, dx);
+            
+            const tx = Math.cos(angle) * dist;
+            const ty = Math.sin(angle) * dist;
+            knob.style.transform = `translate(${tx}px, ${ty}px)`;
+            
+            moveX = tx / 50; 
+            moveZ = ty / 50;
         });
 
-        // Для ПК (WASD)
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'KeyW') moveForward = true;
-            if (e.code === 'KeyS') moveBackward = true;
-        });
-        window.addEventListener('keyup', (e) => {
-            if (e.code === 'KeyW') moveForward = false;
-            if (e.code === 'KeyS') moveBackward = false;
+        container.addEventListener('touchend', () => {
+            knob.style.transform = `translate(0, 0)`;
+            moveX = 0; moveZ = 0;
         });
 
-        // Просте озирання для мобільних
-        let isTouching = false;
-        let prevTouchX = 0;
-        window.addEventListener('touchstart', (e) => { isTouching = true; prevTouchX = e.touches[0].clientX; });
+        // Озирання (права частина екрана)
+        let yaw = 0;
         window.addEventListener('touchmove', (e) => {
-            if (isTouching) {
-                const deltaX = e.touches[0].clientX - prevTouchX;
-                camera.rotation.y -= deltaX * 0.005;
-                prevTouchX = e.touches[0].clientX;
+            if (e.touches[0].clientX > window.innerWidth / 2) {
+                const deltaX = e.changedTouches[0].pageX - (window.innerWidth / 4 * 3);
+                yaw -= deltaX * 0.0001; 
             }
         });
-        window.addEventListener('touchend', () => { isTouching = false; });
 
-        // 6. Логіка руху та КОЛІЗІЇ
+        // 5. ЛОГІКА РУХУ ТА КОЛІЗІЇ
         function animate() {
             requestAnimationFrame(animate);
 
-            if (moveForward || moveBackward) {
-                direction.z = Number(moveForward) - Number(moveBackward);
-                direction.normalize();
-
-                // Визначаємо куди дивиться камера, щоб іти туди
-                const camDir = new THREE.Vector3();
-                camera.getWorldDirection(camDir);
+            if (moveX !== 0 || moveZ !== 0) {
+                const oldPos = camera.position.clone();
                 
-                // Зберігаємо стару позицію для відкату при колізії
-                const oldX = camera.position.x;
-                const oldZ = camera.position.z;
+                // Рух відносно погляду камери
+                const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+                const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+                forward.y = 0; right.y = 0;
+                forward.normalize(); right.normalize();
 
-                if (moveForward) {
-                    camera.position.x += camDir.x * 0.1;
-                    camera.position.z += camDir.z * 0.1;
-                }
-                if (moveBackward) {
-                    camera.position.x -= camDir.x * 0.1;
-                    camera.position.z -= camDir.z * 0.1;
-                }
+                camera.position.addScaledVector(forward, -moveZ * 0.15);
+                camera.position.addScaledVector(right, moveX * 0.15);
 
-                // ПЕРЕВІРКА КОЛІЗІЇ (Межі острова)
-                const distToCenter = Math.sqrt(camera.position.x**2 + camera.position.z**2);
-                if (distToCenter > 7.5) { // Якщо вийшов за край (8 - радіус)
-                    camera.position.x = oldX;
-                    camera.position.z = oldZ;
+                // КОЛІЗІЯ З БУДІВЛЕЮ (Прямокутна зона 4x4 навколо центру)
+                if (Math.abs(camera.position.x) < 3.5 && Math.abs(camera.position.z) < 3.5) {
+                    camera.position.copy(oldPos);
                 }
-
-                // КОЛІЗІЯ ЗІ СКЕЛЕЮ
-                const distToRock = camera.position.distanceTo(rock.position);
-                if (distToRock < 1.8) {
-                    camera.position.x = oldX;
-                    camera.position.z = oldZ;
+                
+                // МЕЖІ ОСТРОВА
+                if (camera.position.length() > 14) {
+                    camera.position.copy(oldPos);
                 }
             }
 
+            camera.rotation.y = yaw;
             renderer.render(scene, camera);
         }
 
         animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            rect = container.getBoundingClientRect();
+            centerX = rect.left + rect.width / 2;
+            centerY = rect.top + rect.height / 2;
+        });
     </script>
 </body>
 </html>
