@@ -2,125 +2,110 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Тропічний Острів</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Острів</title>
     <style>
-        /* Основні стилі для фону та екрана */
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #2e91e5; /* Колір океану */
-            font-family: sans-serif;
-        }
-
-        /* Анімація хвиль */
-        #ocean {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            background: repeating-linear-gradient(45deg, #2e91e5, #2e91e5 40px, #3a9ded 40px, #3a9ded 80px);
-            animation: moveWaves 10s linear infinite;
-        }
-
-        @keyframes moveWaves {
-            from { background-position: 0 0; }
-            to { background-position: 100px 100px; }
-        }
-
-        /* Стиль острова */
-        #island {
+        body { margin: 0; overflow: hidden; background-color: #87CEEB; }
+        canvas { display: block; }
+        #instructions {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 250px;
-            height: 200px;
-            background-color: #f2d16b; /* Пісок */
-            border-radius: 50% 60% 40% 70%; /* Неправильна форма острова */
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2), inset -10px -10px 20px #e0bc54;
-        }
-
-        /* Зелень на острові */
-        #island::after {
-            content: '';
-            position: absolute;
-            top: 30px;
-            left: 50px;
-            width: 100px;
-            height: 80px;
-            background-color: #4caf50;
-            border-radius: 40%;
-            filter: blur(5px);
-        }
-
-        /* Гравець */
-        #player {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background-color: #ff4757;
-            border-radius: 50%;
-            border: 3px solid white;
-            transition: all 0.3s ease-out; /* Плавний рух */
-            z-index: 10;
-        }
-
-        /* Текст-інструкція */
-        .ui {
-            position: absolute;
-            bottom: 20px;
+            top: 10px;
             width: 100%;
             text-align: center;
             color: white;
-            font-weight: bold;
+            font-family: sans-serif;
+            text-shadow: 1px 1px 2px black;
             pointer-events: none;
-            text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
         }
     </style>
 </head>
 <body>
 
-    <div id="ocean">
-        <div id="island"></div>
-        <div id="player"></div>
-    </div>
+    <div id="instructions">Крутіть пальцем, щоб оглянути острів</div>
 
-    <div class="ui">Торкніться екрана, щоб рухатися</div>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 
-    <script>
-        const player = document.getElementById('player');
-        
-        // Початкова позиція гравця
-        let posX = window.innerWidth / 2;
-        let posY = window.innerHeight / 2;
-        
-        updatePosition();
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        // Функція для оновлення координат на екрані
-        function updatePosition() {
-            player.style.left = (posX - 15) + 'px';
-            player.style.top = (posY - 15) + 'px';
+        // 1. Налаштування сцени
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // Блакитне небо
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 10);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        // 2. Освітлення
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const sun = new THREE.DirectionalLight(0xffffff, 1);
+        sun.position.set(5, 10, 7);
+        scene.add(sun);
+
+        // 3. Океан (Синя площина)
+        const waterGeo = new THREE.PlaneGeometry(100, 100);
+        const waterMat = new THREE.MeshStandardMaterial({ 
+            color: 0x0077be, 
+            transparent: true, 
+            opacity: 0.8 
+        });
+        const ocean = new THREE.Mesh(waterGeo, waterMat);
+        ocean.rotation.x = -Math.PI / 2;
+        scene.add(ocean);
+
+        // 4. Острів (Пісочний пагорб)
+        const islandGeo = new THREE.SphereGeometry(3, 32, 32);
+        const islandMat = new THREE.MeshStandardMaterial({ color: 0xedc9af }); // Колір піску
+        const island = new THREE.Mesh(islandGeo, islandMat);
+        island.scale.set(1.5, 0.2, 1.2); // Сплющуємо сферу, щоб був схожий на острів
+        island.position.y = -0.1;
+        scene.add(island);
+
+        // 5. Зелень (Трава/Джунглі зверху)
+        const grassGeo = new THREE.SphereGeometry(1.5, 32, 32);
+        const grassMat = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+        const grass = new THREE.Mesh(grassGeo, grassMat);
+        grass.scale.set(1.2, 0.3, 1);
+        grass.position.y = 0.3;
+        scene.add(grass);
+
+        // 6. Керування камерою (для мобільних та ПК)
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; // Плавність обертання
+
+        // Анімація
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Легке коливання води
+            ocean.position.y = Math.sin(Date.now() * 0.001) * 0.05;
+            
+            controls.update();
+            renderer.render(scene, camera);
         }
 
-        // Керування для мобільних пристроїв та ПК
-        function handleMove(e) {
-            // Отримуємо координати натискання (пальцем або мишкою)
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            
-            posX = clientX;
-            posY = clientY;
-            
-            updatePosition();
-        }
+        // Адаптація під розмір екрану
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
 
-        // Слухаємо події натискання
-        window.addEventListener('touchstart', (e) => handleMove(e));
-        window.addEventListener('mousedown', (e) => handleMove(e));
-
+        animate();
     </script>
 </body>
 </html>
