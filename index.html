@@ -2,26 +2,26 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Острів</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D Острів: Перша особа</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #87CEEB; }
+        body { margin: 0; overflow: hidden; background-color: #87CEEB; touch-action: none; }
         canvas { display: block; }
-        #instructions {
+        #ui {
             position: absolute;
-            top: 10px;
+            bottom: 20px;
             width: 100%;
             text-align: center;
             color: white;
             font-family: sans-serif;
-            text-shadow: 1px 1px 2px black;
             pointer-events: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
         }
     </style>
 </head>
 <body>
 
-    <div id="instructions">Крутіть пальцем, щоб оглянути острів</div>
+    <div id="ui">Затисніть зверху, щоб іти вперед <br> Тягніть знизу, щоб озиратися</div>
 
     <script type="importmap">
         {
@@ -34,76 +34,131 @@
 
     <script type="module">
         import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
-        // 1. Налаштування сцени
+        // 1. Сцена та Камера
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB); // Блакитне небо
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.Fog(0x87CEEB, 0, 50); // Туман для реалістичності горизонту
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 5, 10);
+        camera.position.y = 1.6; // Ріст людини
+        camera.position.z = 5;
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
 
-        // 2. Освітлення
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-
+        // 2. Світло
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
         const sun = new THREE.DirectionalLight(0xffffff, 1);
-        sun.position.set(5, 10, 7);
+        sun.position.set(10, 20, 10);
         scene.add(sun);
 
-        // 3. Океан (Синя площина)
-        const waterGeo = new THREE.PlaneGeometry(100, 100);
-        const waterMat = new THREE.MeshStandardMaterial({ 
-            color: 0x0077be, 
-            transparent: true, 
-            opacity: 0.8 
-        });
-        const ocean = new THREE.Mesh(waterGeo, waterMat);
-        ocean.rotation.x = -Math.PI / 2;
-        scene.add(ocean);
-
-        // 4. Острів (Пісочний пагорб)
-        const islandGeo = new THREE.SphereGeometry(3, 32, 32);
-        const islandMat = new THREE.MeshStandardMaterial({ color: 0xedc9af }); // Колір піску
+        // 3. Острів (Колізійна зона)
+        const islandGeo = new THREE.CylinderGeometry(8, 10, 2, 32);
+        const islandMat = new THREE.MeshStandardMaterial({ color: 0xedc9af });
         const island = new THREE.Mesh(islandGeo, islandMat);
-        island.scale.set(1.5, 0.2, 1.2); // Сплющуємо сферу, щоб був схожий на острів
-        island.position.y = -0.1;
+        island.position.y = -1;
         scene.add(island);
 
-        // 5. Зелень (Трава/Джунглі зверху)
-        const grassGeo = new THREE.SphereGeometry(1.5, 32, 32);
-        const grassMat = new THREE.MeshStandardMaterial({ color: 0x228b22 });
-        const grass = new THREE.Mesh(grassGeo, grassMat);
-        grass.scale.set(1.2, 0.3, 1);
-        grass.position.y = 0.3;
-        scene.add(grass);
+        // Об'єкт на острові (Скеля для перевірки колізії)
+        const rockGeo = new THREE.DodecahedronGeometry(1.5);
+        const rockMat = new THREE.MeshStandardMaterial({ color: 0x808080 });
+        const rock = new THREE.Mesh(rockGeo, rockMat);
+        rock.position.set(3, 0.5, -2);
+        scene.add(rock);
 
-        // 6. Керування камерою (для мобільних та ПК)
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true; // Плавність обертання
+        // 4. Океан
+        const waterGeo = new THREE.PlaneGeometry(1000, 1000);
+        const waterMat = new THREE.MeshStandardMaterial({ color: 0x0044ff, transparent: true, opacity: 0.6 });
+        const water = new THREE.Mesh(waterGeo, waterMat);
+        water.rotation.x = -Math.PI / 2;
+        water.position.y = -1.1;
+        scene.add(water);
 
-        // Анімація
+        // 5. Керування
+        let moveForward = false;
+        let moveBackward = false;
+        const velocity = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+
+        // Обробка торкань для мобільних
+        window.addEventListener('touchstart', (e) => {
+            const touchY = e.touches[0].clientY;
+            if (touchY < window.innerHeight / 2) moveForward = true;
+            else moveBackward = true;
+        });
+        window.addEventListener('touchend', () => {
+            moveForward = false;
+            moveBackward = false;
+        });
+
+        // Для ПК (WASD)
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyW') moveForward = true;
+            if (e.code === 'KeyS') moveBackward = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'KeyW') moveForward = false;
+            if (e.code === 'KeyS') moveBackward = false;
+        });
+
+        // Просте озирання для мобільних
+        let isTouching = false;
+        let prevTouchX = 0;
+        window.addEventListener('touchstart', (e) => { isTouching = true; prevTouchX = e.touches[0].clientX; });
+        window.addEventListener('touchmove', (e) => {
+            if (isTouching) {
+                const deltaX = e.touches[0].clientX - prevTouchX;
+                camera.rotation.y -= deltaX * 0.005;
+                prevTouchX = e.touches[0].clientX;
+            }
+        });
+        window.addEventListener('touchend', () => { isTouching = false; });
+
+        // 6. Логіка руху та КОЛІЗІЇ
         function animate() {
             requestAnimationFrame(animate);
-            
-            // Легке коливання води
-            ocean.position.y = Math.sin(Date.now() * 0.001) * 0.05;
-            
-            controls.update();
+
+            if (moveForward || moveBackward) {
+                direction.z = Number(moveForward) - Number(moveBackward);
+                direction.normalize();
+
+                // Визначаємо куди дивиться камера, щоб іти туди
+                const camDir = new THREE.Vector3();
+                camera.getWorldDirection(camDir);
+                
+                // Зберігаємо стару позицію для відкату при колізії
+                const oldX = camera.position.x;
+                const oldZ = camera.position.z;
+
+                if (moveForward) {
+                    camera.position.x += camDir.x * 0.1;
+                    camera.position.z += camDir.z * 0.1;
+                }
+                if (moveBackward) {
+                    camera.position.x -= camDir.x * 0.1;
+                    camera.position.z -= camDir.z * 0.1;
+                }
+
+                // ПЕРЕВІРКА КОЛІЗІЇ (Межі острова)
+                const distToCenter = Math.sqrt(camera.position.x**2 + camera.position.z**2);
+                if (distToCenter > 7.5) { // Якщо вийшов за край (8 - радіус)
+                    camera.position.x = oldX;
+                    camera.position.z = oldZ;
+                }
+
+                // КОЛІЗІЯ ЗІ СКЕЛЕЮ
+                const distToRock = camera.position.distanceTo(rock.position);
+                if (distToRock < 1.8) {
+                    camera.position.x = oldX;
+                    camera.position.z = oldZ;
+                }
+            }
+
             renderer.render(scene, camera);
         }
-
-        // Адаптація під розмір екрану
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
 
         animate();
     </script>
