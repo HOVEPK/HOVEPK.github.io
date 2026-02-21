@@ -1,22 +1,23 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Roblox Island: Auto Music</title>
+    <title>Island Pro: Audio Fix</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; touch-action: none; font-family: 'Segoe UI', sans-serif; }
+        body { margin: 0; overflow: hidden; background: #000; touch-action: none; font-family: sans-serif; }
         canvas { display: block; }
         
-        /* Кнопка запуску */
-        #ui-overlay {
-            position: absolute; top: 20px; right: 20px; z-index: 1000;
-        }
+        #ui { position: absolute; top: 20px; right: 20px; z-index: 1000; }
         #start-btn {
-            background: #00ff44; border: 2px solid #fff; color: #000;
-            padding: 15px 25px; border-radius: 12px; font-weight: bold;
-            cursor: pointer; box-shadow: 0 0 20px rgba(0,255,68,0.5);
-            text-transform: uppercase; letter-spacing: 1px;
+            background: #ff0000; color: #fff; border: 2px solid #fff;
+            padding: 15px 30px; border-radius: 10px; cursor: pointer;
+            font-weight: bold; font-size: 16px; box-shadow: 0 0 20px rgba(255,0,0,0.5);
+        }
+
+        /* Контейнер для звуков (скрыт от глаз, но активен для браузера) */
+        #audio-container {
+            position: absolute; bottom: -500px; left: 0; opacity: 0.1; pointer-events: none;
         }
 
         #joy-base {
@@ -32,8 +33,13 @@
 </head>
 <body>
 
-    <div id="ui-overlay">
-        <button id="start-btn">УВІМКНУТИ ЗВУК ТА ГРУ</button>
+    <div id="ui">
+        <button id="start-btn">ВКЛЮЧИТЬ ЗВУК И ГРУ</button>
+    </div>
+
+    <div id="audio-container">
+        <div id="world-audio"></div>
+        <div id="temple-audio"></div>
     </div>
 
     <div id="joy-base"><div id="joy-stick"></div></div>
@@ -47,41 +53,33 @@
         import { Sky } from 'three/addons/objects/Sky.js';
         import { Water } from 'three/addons/objects/Water.js';
 
-        // --- AUDIO SYSTEM ---
-        // Прямі посилання на аудіо-потоки
-        const worldMusic = new Audio('https://www.myinstants.com/media/sounds/jeffrey-epstein-edit-98984.mp3');
-        const templeMusic = new Audio('https://www.myinstants.com/media/sounds/lock-in-epstein-edition-slowed-64683.mp3');
-        
-        worldMusic.loop = true;
-        templeMusic.loop = true;
-        worldMusic.crossOrigin = "anonymous";
-        templeMusic.crossOrigin = "anonymous";
-
-        let musicPlaying = false;
+        let musicStarted = false;
         let isInside = false;
 
-        const startBtn = document.getElementById('start-btn');
-        startBtn.onclick = () => {
-            if (!musicPlaying) {
-                worldMusic.play().catch(e => console.log("Audio play error:", e));
-                templeMusic.play().catch(e => console.log("Audio play error:", e));
-                // Відразу ставимо музику храму на беззвучний
-                templeMusic.volume = 0;
-                worldMusic.volume = 0.6;
-                
-                startBtn.innerText = "ЗВУК ПРАЦЮЄ";
-                startBtn.style.background = "#fff";
-                musicPlaying = true;
-                
-                // Ховаємо кнопку через секунду
-                setTimeout(() => { startBtn.style.display = 'none'; }, 1000);
+        // Функция запуска звука через Embed
+        function playSound(type) {
+            const worldDiv = document.getElementById('world-audio');
+            const templeDiv = document.getElementById('temple-audio');
+
+            if (type === 'world') {
+                worldDiv.innerHTML = '<iframe width="110" height="200" src="https://www.myinstants.com/instant/jeffrey-epstein-edit-98984/embed/" frameborder="0" scrolling="no"></iframe>';
+                templeDiv.innerHTML = '';
+            } else {
+                worldDiv.innerHTML = '';
+                templeDiv.innerHTML = '<iframe width="110" height="200" src="https://www.myinstants.com/instant/lock-in-epstein-edition-slowed-64683/embed/" frameborder="0" scrolling="no"></iframe>';
             }
+        }
+
+        document.getElementById('start-btn').onclick = function() {
+            playSound('world');
+            this.style.display = 'none';
+            musicStarted = true;
         };
 
-        // --- THREE.JS SCENE ---
+        // --- SCENE ---
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.set(80, 5, 80);
+        camera.position.set(90, 5, 90);
         camera.rotation.order = 'YXZ';
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -89,7 +87,7 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
 
-        // --- ENVIRONMENT ---
+        // --- SKY ---
         scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.5));
         const sun = new THREE.Vector3();
         const sky = new Sky(); sky.scale.setScalar(10000); scene.add(sky);
@@ -103,48 +101,38 @@
         });
         water.rotation.x = -Math.PI / 2; water.position.y = -1; scene.add(water);
 
-        const island = new THREE.Mesh(new THREE.CylinderGeometry(140, 150, 10, 32), new THREE.MeshStandardMaterial({ color: 0xeed2af }));
+        const island = new THREE.Mesh(new THREE.CylinderGeometry(150, 160, 10, 32), new THREE.MeshStandardMaterial({ color: 0xeed2af }));
         island.position.y = -5.5; scene.add(island);
 
-        // --- ROBLOX GRASS ---
-        const grassCount = 5000;
-        const instGrass = new THREE.InstancedMesh(
-            new THREE.PlaneGeometry(0.4, 1.0), 
-            new THREE.MeshStandardMaterial({ color: 0x22ff22, side: THREE.DoubleSide }), 
-            grassCount
-        );
+        // --- GRASS ---
+        const instGrass = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.4, 1), new THREE.MeshStandardMaterial({ color: 0x22ff22, side: THREE.DoubleSide }), 4000);
         const dummy = new THREE.Object3D();
-        for (let i = 0; i < grassCount; i++) {
-            const a = Math.random() * Math.PI * 2, r = 35 + Math.random() * 100;
+        for (let i = 0; i < 4000; i++) {
+            const a = Math.random() * Math.PI * 2, r = 40 + Math.random() * 100;
             dummy.position.set(Math.cos(a)*r, -0.4, Math.sin(a)*r);
             dummy.rotation.y = Math.random() * Math.PI;
-            dummy.scale.setScalar(0.8 + Math.random() * 0.7);
             dummy.updateMatrix();
             instGrass.setMatrixAt(i, dummy.matrix);
         }
         scene.add(instGrass);
 
-        // --- BIG TEMPLE ---
+        // --- TEMPLE ---
         const temple = new THREE.Group();
-        const wallH = 28, wallW = 45;
-        for(let i=0; i<25; i++) {
-            const h = wallH/25, y = i*h + h/2, blue = i%2===0;
+        const wallH = 30, wallW = 50;
+        for(let i=0; i<20; i++) {
+            const h = wallH/20, y = i*h + h/2, blue = i%2===0;
             const mat = new THREE.MeshStandardMaterial({ color: blue ? 0x0044ff : 0xffffff });
             const box = (w, d, px, pz) => {
                 const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
                 m.position.set(px, y, pz); temple.add(m);
             };
             box(wallW, 1.5, 0, -wallW/2); box(1.5, wallW, -wallW/2, 0); box(1.5, wallW, wallW/2, 0);
-            if(i > 15) box(wallW, 1.5, 0, wallW/2);
-            else { box(18, 1.5, -13.5, wallW/2); box(18, 1.5, 13.5, wallW/2); }
+            if(i > 12) box(wallW, 1.5, 0, wallW/2);
+            else { box(20, 1.5, -15, wallW/2); box(20, 1.5, 15, wallW/2); }
         }
-        const dome = new THREE.Mesh(new THREE.SphereGeometry(22, 32, 16, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshStandardMaterial({color: 0xffd700, metalness: 0.9, roughness: 0.1}));
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(25, 32, 16, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshStandardMaterial({color: 0xffd700, metalness: 0.9}));
         dome.position.y = wallH; temple.add(dome);
         scene.add(temple);
-
-        // Двері (Телепорт маркер)
-        const door = new THREE.Mesh(new THREE.BoxGeometry(9, 16, 0.5), new THREE.MeshStandardMaterial({color: 0x221100}));
-        door.position.set(0, 8, wallW/2 + 0.5); scene.add(door);
 
         // --- CONTROLS ---
         let joyId = null, lookId = null;
@@ -174,44 +162,29 @@
             }
         });
 
-        window.addEventListener('pointerup', e => {
-            if (e.pointerId === joyId) { joyId = null; move.x = 0; move.y = 0; joyB.style.display = 'none'; }
-            else if (e.pointerId === lookId) lookId = null;
-        });
+        window.addEventListener('pointerup', () => { joyId = null; move.x = 0; move.y = 0; joyB.style.display = 'none'; lookId = null; });
 
-        // --- ANIMATION & LOGIC ---
         function animate() {
             requestAnimationFrame(animate);
             if (joyId !== null) {
                 const f = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion); f.y = 0; f.normalize();
                 const r = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion); r.y = 0; r.normalize();
                 const old = camera.position.clone();
-                camera.position.addScaledVector(f, -move.y * 0.55);
-                camera.position.addScaledVector(r, move.x * 0.55);
+                camera.position.addScaledVector(f, -move.y * 0.6);
+                camera.position.addScaledVector(r, move.x * 0.6);
 
-                // TELEPORT & SOUND CROSSFADE
+                // TELEPORT & SOUND
                 const distToDoor = camera.position.distanceTo(new THREE.Vector3(0, 3, wallW/2));
-                
-                if (distToDoor < 7 && !isInside) {
-                    camera.position.set(0, 4, 0); // Телепорт всередину
+                if (distToDoor < 8 && !isInside) {
+                    camera.position.set(0, 5, 0);
                     isInside = true;
-                    if (musicPlaying) {
-                        worldMusic.volume = 0;
-                        templeMusic.volume = 0.7;
-                    }
-                } else if (camera.position.length() > 35 && isInside) {
-                    isInside = false; // Вихід
-                    if (musicPlaying) {
-                        worldMusic.volume = 0.6;
-                        templeMusic.volume = 0;
-                    }
+                    if(musicStarted) playSound('temple');
+                } else if (camera.position.length() > 40 && isInside) {
+                    isInside = false;
+                    if(musicStarted) playSound('world');
                 }
-
-                // COLLISION
-                if (camera.position.length() > 135) camera.position.copy(old);
-                if (!isInside && Math.abs(camera.position.x) < wallW/2 + 2 && Math.abs(camera.position.z) < wallW/2 + 2) {
-                    if (camera.position.z < wallW/2 - 1) camera.position.copy(old);
-                }
+                
+                if (camera.position.length() > 145) camera.position.copy(old);
             }
             camera.rotation.y = rot.yaw; camera.rotation.x = rot.pitch;
             water.material.uniforms['time'].value += 0.01;
