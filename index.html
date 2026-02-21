@@ -1,135 +1,194 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Realistic Island Temple</title>
+    <title>Real Island</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #87ceeb; touch-action: none; }
-        #joystick { position: absolute; bottom: 30px; left: 30px; width: 100px; height: 100px; background: rgba(255,255,255,0.2); border-radius: 50%; display: none; }
-        #knob { position: absolute; width: 40px; height: 40px; background: #fff; border-radius: 50%; top: 30px; left: 30px; }
+        body { margin: 0; overflow: hidden; background: #000; touch-action: none; font-family: sans-serif; }
+        /* Джойстик */
+        #joy-base { position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; display: none; z-index: 100; }
+        #joy-stick { position: absolute; width: 50px; height: 50px; background: #fff; border-radius: 50%; top: 35px; left: 35px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        /* Плееры */
+        #sound-panel { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 8px; }
     </style>
 </head>
 <body>
-    <div id="joystick"><div id="knob"></div></div>
+    <div id="sound-panel">
+        <iframe width="100" height="60" src="https://www.myinstants.com/instant/jeffrey-epstein-edit-98984/embed/" frameborder="0" scrolling="no"></iframe>
+    </div>
+    <div id="joy-base"><div id="joy-stick"></div></div>
+
     <script type="importmap">
         { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
     </script>
     <script type="module">
         import * as THREE from 'three';
         import { Sky } from 'three/addons/objects/Sky.js';
+        import { Water } from 'three/addons/objects/Water.js';
 
+        // --- СЦЕНА ---
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
-        camera.position.set(250, 60, 250);
+        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 5000);
+        camera.position.set(220, 60, 220); // Початкова позиція
+        camera.rotation.order = 'YXZ';
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        // Важливо для реалізму: Тонемаппінг
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 0.8;
         renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // --- ОСВІТЛЕННЯ (Виправляємо темряву) ---
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2); // Світло від неба
+        // --- ОСВІТЛЕННЯ (Виправляємо чорні тіні) ---
+        // HemisphereLight заповнює тіні світлом неба
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
         scene.add(hemiLight);
 
-        const sunLight = new THREE.DirectionalLight(0xfff5e1, 2.5);
-        sunLight.position.set(200, 300, 100);
+        // Яскраве сонце
+        const sunLight = new THREE.DirectionalLight(0xfff0dd, 3.0);
+        sunLight.position.set(100, 300, 200);
         sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048; // Чіткі тіні
+        sunLight.shadow.mapSize.height = 2048;
         scene.add(sunLight);
 
-        // --- НЕБО ---
-        const sky = new Sky(); sky.scale.setScalar(45000); scene.add(sky);
-        const sun = new THREE.Vector3();
-        sun.setFromSphericalCoords(1, THREE.MathUtils.degToRad(85), THREE.MathUtils.degToRad(170));
-        sky.material.uniforms['sunPosition'].value.copy(sun);
+        // --- НЕБО ТА ВОДА ---
+        const sky = new Sky(); sky.scale.setScalar(10000); scene.add(sky);
+        const sunPos = new THREE.Vector3();
+        // Сонце високо для яскравого дня
+        sunPos.setFromSphericalCoords(1, THREE.MathUtils.degToRad(70), THREE.MathUtils.degToRad(180));
+        sky.material.uniforms['sunPosition'].value.copy(sunPos);
+
+        const water = new Water(new THREE.PlaneGeometry(10000, 10000), {
+            textureWidth: 512, textureHeight: 512,
+            waterNormals: new THREE.TextureLoader().load('https://threejs.org/examples/textures/waternormals.jpg', t => t.wrapS = t.wrapT = THREE.RepeatWrapping),
+            sunDirection: sunPos, sunColor: 0xffffff, waterColor: 0x004455, distortionScale: 3.7
+        });
+        water.rotation.x = -Math.PI / 2; water.position.y = -5; scene.add(water);
 
         // --- ОСТРІВ ---
-        const terrainGeo = new THREE.CylinderGeometry(400, 420, 20, 64);
-        const terrainMat = new THREE.MeshStandardMaterial({ color: 0x99aa55, roughness: 1 });
-        const island = new THREE.Mesh(terrainGeo, terrainMat);
-        island.position.y = -10;
+        const island = new THREE.Mesh(
+            new THREE.CylinderGeometry(300, 350, 30, 64),
+            new THREE.MeshStandardMaterial({ color: 0xaacc66, roughness: 0.9 })
+        );
+        island.position.y = -15;
         island.receiveShadow = true;
         scene.add(island);
 
-        // --- ХРАМ "ТОЧ-В-ТОЧ" ---
+        // --- ХРАМ (Точна копія) ---
         const temple = new THREE.Group();
-        const size = 100;
-        const stripeH = 8;
-        
-        // Стіни зі смугами (як на фото 1000018189.jpg)
-        for(let i=0; i<10; i++) {
-            const mat = new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0x0044cc : 0xffffff });
-            const box = new THREE.Mesh(new THREE.BoxGeometry(size, stripeH, size), mat);
-            box.position.y = i * stripeH + stripeH/2;
-            box.castShadow = true;
-            temple.add(box);
+        const tW = 90; // Ширина
+        const wallH = 60; // Висота стін
+        const stripeCount = 8;
+        const stripeH = wallH / stripeCount;
+
+        const matWhite = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+        const matBlue = new THREE.MeshStandardMaterial({ color: 0x0033cc, roughness: 0.5 });
+
+        for(let i=0; i<stripeCount; i++) {
+            const y = i * stripeH + stripeH/2;
+            const mat = i % 2 === 0 ? matBlue : matWhite;
+            
+            // Задня і бічні стіни
+            const back = new THREE.Mesh(new THREE.BoxGeometry(tW, stripeH, 4), mat); back.position.set(0, y, -tW/2); back.castShadow = true; temple.add(back);
+            const left = new THREE.Mesh(new THREE.BoxGeometry(4, stripeH, tW), mat); left.position.set(-tW/2, y, 0); left.castShadow = true; temple.add(left);
+            const right = new THREE.Mesh(new THREE.BoxGeometry(4, stripeH, tW), mat); right.position.set(tW/2, y, 0); right.castShadow = true; temple.add(right);
+
+            // Перед (з отвором)
+            if (i >= stripeCount - 3) { // Верх над аркою
+                const front = new THREE.Mesh(new THREE.BoxGeometry(tW, stripeH, 4), mat); front.position.set(0, y, tW/2); front.castShadow = true; temple.add(front);
+            } else {
+                const fL = new THREE.Mesh(new THREE.BoxGeometry(30, stripeH, 4), mat); fL.position.set(-30, y, tW/2); fL.castShadow = true; temple.add(fL);
+                const fR = new THREE.Mesh(new THREE.BoxGeometry(30, stripeH, 4), mat); fR.position.set(30, y, tW/2); fR.castShadow = true; temple.add(fR);
+            }
         }
 
-        // Золотий купол (як на фото 1000018188.jpg)
-        const dome = new THREE.Mesh(
-            new THREE.SphereGeometry(size/2, 32, 32, 0, Math.PI*2, 0, Math.PI/2),
-            new THREE.MeshStandardMaterial({ color: 0xffaa00, metalness: 1, roughness: 0.1 })
-        );
-        dome.position.y = 80;
+        // Золотий Купол (PBR матеріал для блиску)
+        const domeMat = new THREE.MeshStandardMaterial({ 
+            color: 0xffaa00, 
+            metalness: 1.0, // Максимальна металевість
+            roughness: 0.1  // Майже дзеркальна гладкість
+        });
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(tW/2, 48, 32, 0, Math.PI*2, 0, Math.PI/2), domeMat);
+        dome.position.y = wallH;
         temple.add(dome);
-        
-        // Арка (синій вхід)
-        const arch = new THREE.Mesh(new THREE.TorusGeometry(20, 3, 16, 100, Math.PI), new THREE.MeshStandardMaterial({color: 0x0044cc}));
-        arch.position.set(0, 40, size/2 + 1);
+
+        // Синя Арка на вході
+        const arch = new THREE.Mesh(new THREE.TorusGeometry(15, 3, 16, 100, Math.PI), matBlue);
+        arch.position.set(0, 35, tW/2 + 2);
         temple.add(arch);
 
         scene.add(temple);
 
-        // --- ЛАБІРИНТ (Червона підлога) ---
-        const mazeGeo = new THREE.PlaneGeometry(250, 250);
-        const mazeMat = new THREE.MeshStandardMaterial({ color: 0xaa0000, roughness: 0.8 });
-        const maze = new THREE.Mesh(mazeGeo, mazeMat);
-        maze.rotation.x = -Math.PI/2;
-        maze.position.set(0, 0.5, 150);
+        // --- ЛАБІРИНТ НА ПІДЛОЗІ (Як на фото) ---
+        // Малюємо текстуру лабіринту на canvas
+        const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,512,512);
+        ctx.strokeStyle = '#aa0000'; ctx.lineWidth = 30;
+        // Прямокутний спіральний візерунок
+        let x=40, y=40, w=432, h=432;
+        while(w > 0 && h > 0) { ctx.strokeRect(x, y, w, h); x+=40; y+=40; w-=80; h-=80; ctx.clearRect(x-15, y-40, 30, 40); } 
+        
+        const mazeTex = new THREE.CanvasTexture(canvas);
+        const maze = new THREE.Mesh(new THREE.PlaneGeometry(180, 180), new THREE.MeshStandardMaterial({ map: mazeTex, roughness: 0.8 }));
+        maze.rotation.x = -Math.PI/2; maze.position.set(0, 0.5, 120); maze.receiveShadow = true;
         scene.add(maze);
 
-        // --- ПАЛЬМИ (Рухливе листя) ---
-        const palmMat = new THREE.MeshStandardMaterial({ color: 0x225511 });
+        // --- ПАЛЬМИ (З вітром) ---
+        const leafMat = new THREE.MeshStandardMaterial({ color: 0x336611, side: THREE.DoubleSide });
+        // Простий шейдер вітру
+        leafMat.onBeforeCompile = (s) => {
+             s.uniforms.uTime = { value: 0 };
+             s.vertexShader = `uniform float uTime;\n` + s.vertexShader.replace(`#include <begin_vertex>`, 
+                 `vec3 v = position; v.y += sin(uTime*2.0 + v.x*0.5)*2.0; vec3 transformed = v;`);
+             leafMat.userData.shader = s;
+        };
         function createPalm(x, z) {
             const p = new THREE.Group();
-            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1, 2, 60), new THREE.MeshStandardMaterial({color: 0x443322}));
-            trunk.position.y = 30;
-            p.add(trunk);
-            
-            for(let i=0; i<8; i++) {
-                const leaf = new THREE.Mesh(new THREE.BoxGeometry(25, 1, 5), palmMat);
-                leaf.position.y = 60;
-                leaf.rotation.y = (i / 8) * Math.PI * 2;
-                leaf.rotation.z = 0.5;
-                leaf.name = "leaf";
-                p.add(leaf);
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1, 2, 50, 10), new THREE.MeshStandardMaterial({color: 0x554433}));
+            trunk.position.y = 25; trunk.castShadow = true; p.add(trunk);
+            for(let i=0; i<10; i++) {
+                const leaf = new THREE.Mesh(new THREE.PlaneGeometry(30, 5, 5, 1), leafMat);
+                leaf.position.y = 50; leaf.rotation.y = i*Math.PI/5; leaf.rotation.z = 0.5; leaf.translateX(15); leaf.castShadow = true; p.add(leaf);
             }
-            p.position.set(x, 0, z);
-            scene.add(p);
+            p.position.set(x, 0, z); scene.add(p);
         }
-        for(let i=0; i<20; i++) {
-            createPalm(Math.cos(i)*250, Math.sin(i)*250);
-        }
+        for(let i=0; i<25; i++) { let a=Math.random()*Math.PI*2, r=150+Math.random()*140; createPalm(Math.cos(a)*r, Math.sin(a)*r); }
+
+        // --- УПРАВЛІННЯ (Джойстик) ---
+        let joyId=null, lookId=null, move={x:0,y:0,sX:0,sY:0}, rot={yaw:0,pitch:0}, lastL={x:0,y:0};
+        const jB=document.getElementById('joy-base'), jS=document.getElementById('joy-stick');
+        window.addEventListener('pointerdown', e => {
+            if(e.clientX<window.innerWidth/2) { joyId=e.pointerId; move.sX=e.clientX; move.sY=e.clientY; jB.style.display='block'; jB.style.left=(e.clientX-60)+'px'; jB.style.top=(e.clientY-60)+'px'; }
+            else { lookId=e.pointerId; lastL.x=e.clientX; lastL.y=e.clientY; }
+        });
+        window.addEventListener('pointermove', e => {
+            if(e.pointerId===joyId) { let dx=e.clientX-move.sX, dy=e.clientY-move.sY, d=Math.min(Math.sqrt(dx*dx+dy*dy), 50), a=Math.atan2(dy,dx); move.x=Math.cos(a)*(d/50); move.y=Math.sin(a)*(d/50); jS.style.transform=`translate(${Math.cos(a)*d}px, ${Math.sin(a)*d}px)`; }
+            else if(e.pointerId===lookId) { rot.yaw-=(e.clientX-lastL.x)*0.005; rot.pitch=Math.max(-1.5,Math.min(1.5,rot.pitch-(e.clientY-lastL.y)*0.005)); lastL.x=e.clientX; lastL.y=e.clientY; }
+        });
+        window.addEventListener('pointerup', ()=>{ joyId=null; move.x=0; move.y=0; jB.style.display='none'; lookId=null; });
 
         // --- АНІМАЦІЯ ---
+        const clock = new THREE.Clock();
         function animate() {
             requestAnimationFrame(animate);
-            const time = Date.now() * 0.002;
-            scene.traverse((obj) => {
-                if(obj.name === "leaf") {
-                    obj.rotation.z = 0.5 + Math.sin(time + obj.rotation.y) * 0.1; // Вітер
-                }
-            });
+            const t = clock.getElapsedTime();
+            if(leafMat.userData.shader) leafMat.userData.shader.uniforms.uTime.value = t;
+
+            if(joyId !== null) {
+                const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion); dir.y=0; dir.normalize();
+                const side = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion); side.y=0; side.normalize();
+                camera.position.addScaledVector(dir, -move.y * 3); camera.position.addScaledVector(side, move.x * 3);
+            }
+            camera.rotation.y = rot.yaw; camera.rotation.x = rot.pitch;
+            water.material.uniforms['time'].value += 0.01;
             renderer.render(scene, camera);
         }
         animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        window.addEventListener('resize', ()=>{ camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); });
     </script>
 </body>
 </html>
