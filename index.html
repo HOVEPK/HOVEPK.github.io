@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>High-End Island: Collision & Grass</title>
+    <title>3D Temple Pro: Open World</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; }
         canvas { display: block; }
@@ -35,121 +35,146 @@
         import { Sky } from 'three/addons/objects/Sky.js';
         import { Water } from 'three/addons/objects/Water.js';
 
+        // --- SETUP ---
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 5000);
-        camera.position.set(30, 6, 30);
+        scene.fog = new THREE.Fog(0x87CEEB, 20, 200);
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+        camera.position.set(45, 1.8, 45); // Починаємо перед храмом
         camera.rotation.order = 'YXZ';
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 0.8;
+        renderer.toneMappingExposure = 1.0;
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(renderer.domElement);
 
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-        scene.add(hemiLight);
-
-        const sun = new THREE.Vector3();
-        const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
+        // --- LIGHTS ---
+        scene.add(new THREE.HemisphereLight(0x87CEEB, 0x444444, 1.5));
+        const sunPos = new THREE.Vector3();
+        const dirLight = new THREE.DirectionalLight(0xffffff, 3);
         dirLight.castShadow = true;
-        dirLight.shadow.mapSize.set(4096, 4096); 
-        dirLight.shadow.camera.left = -60;
-        dirLight.shadow.camera.right = 60;
-        dirLight.shadow.camera.top = 60;
-        dirLight.shadow.camera.bottom = -60;
-        dirLight.shadow.bias = -0.0001;
+        dirLight.shadow.mapSize.set(2048, 2048);
+        dirLight.shadow.camera.left = -100; dirLight.shadow.camera.right = 100;
+        dirLight.shadow.camera.top = 100; dirLight.shadow.camera.bottom = -100;
         scene.add(dirLight);
 
+        // --- SKY & WATER ---
         const sky = new Sky();
         sky.scale.setScalar(10000);
         scene.add(sky);
-        const phi = THREE.MathUtils.degToRad(87);
-        const theta = THREE.MathUtils.degToRad(180);
-        sun.setFromSphericalCoords(1, phi, theta);
-        sky.material.uniforms['sunPosition'].value.copy(sun);
-        dirLight.position.copy(sun).multiplyScalar(200);
+        sunPos.setFromSphericalCoords(1, THREE.MathUtils.degToRad(85), THREE.MathUtils.degToRad(180));
+        sky.material.uniforms['sunPosition'].value.copy(sunPos);
+        dirLight.position.copy(sunPos).multiplyScalar(100);
 
-        const waterGeo = new THREE.PlaneGeometry(10000, 10000);
-        const water = new Water(waterGeo, {
+        const water = new Water(new THREE.PlaneGeometry(10000, 10000), {
             textureWidth: 512, textureHeight: 512,
             waterNormals: new THREE.TextureLoader().load('https://threejs.org/examples/textures/waternormals.jpg', t => t.wrapS = t.wrapT = THREE.RepeatWrapping),
-            sunDirection: sun, sunColor: 0xffffff, waterColor: 0x001e0f, distortionScale: 4.0
+            sunDirection: sunPos, sunColor: 0xffffff, waterColor: 0x001e0f, distortionScale: 3.0
         });
         water.rotation.x = -Math.PI / 2;
-        water.position.y = -0.6;
+        water.position.y = -1.2;
         scene.add(water);
 
-        const islandGeo = new THREE.CylinderGeometry(55, 65, 8, 64);
-        const islandMat = new THREE.MeshStandardMaterial({ color: 0xeed2af, roughness: 1 });
-        const island = new THREE.Mesh(islandGeo, islandMat);
-        island.position.y = -4;
+        // --- ISLAND ---
+        const island = new THREE.Mesh(
+            new THREE.CylinderGeometry(80, 90, 12, 64),
+            new THREE.MeshStandardMaterial({ color: 0xeed2af, roughness: 1 })
+        );
+        island.position.y = -6.2;
         island.receiveShadow = true;
         scene.add(island);
 
-        // --- ХРАМ З ДВЕРИМА ---
-        function createTemple() {
-            const temple = new THREE.Group();
-            for(let i = 0; i < 14; i++) {
-                const isBlue = i % 2 === 0;
-                const layer = new THREE.Mesh(
-                    new THREE.BoxGeometry(10, 0.6, 10),
-                    new THREE.MeshStandardMaterial({ color: isBlue ? 0x0044ff : 0xffffff, roughness: 0.3 })
-                );
-                layer.position.y = i * 0.6;
-                layer.castShadow = true;
-                layer.receiveShadow = true;
-                temple.add(layer);
-            }
-            // Двері
-            const doorGeo = new THREE.BoxGeometry(2.5, 4.5, 0.2);
-            const doorMat = new THREE.MeshStandardMaterial({ color: 0x3d2b1f });
-            const door = new THREE.Mesh(doorGeo, doorMat);
-            door.position.set(0, 2.2, 5.05); // На фасад
-            temple.add(door);
+        // --- GRAND TEMPLE (INTERIOR READY) ---
+        const temple = new THREE.Group();
+        const wallMat = (isBlue) => new THREE.MeshStandardMaterial({ color: isBlue ? 0x0044ff : 0xffffff, side: THREE.DoubleSide });
 
-            const dome = new THREE.Mesh(new THREE.SphereGeometry(4.2, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 1, roughness: 0.1 }));
-            dome.position.y = 8.3;
-            dome.castShadow = true;
-            temple.add(dome);
-            return temple;
+        function createWall(w, h, d, x, y, z, isBlue = false) {
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat(isBlue));
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            temple.add(mesh);
         }
-        scene.add(createTemple());
 
-        // --- ТРАВА (GRASS) ---
-        function addGrass() {
-            const grassGeo = new THREE.PlaneGeometry(0.4, 0.8);
-            const grassMat = new THREE.MeshStandardMaterial({ color: 0x2d5a27, side: THREE.DoubleSide });
-            for(let i = 0; i < 300; i++) {
-                const blade = new THREE.Mesh(grassGeo, grassMat);
+        // Будуємо стіни шарами (смугастий храм)
+        const wallSize = 15;
+        const wallHeight = 10;
+        const layers = 14;
+        const layerH = wallHeight / layers;
+
+        for (let i = 0; i < layers; i++) {
+            const yPos = i * layerH + layerH/2;
+            const blue = i % 2 === 0;
+            // Задня стіна
+            createWall(wallSize, layerH, 0.8, 0, yPos, -wallSize/2, blue);
+            // Бічні стіни
+            createWall(0.8, layerH, wallSize, -wallSize/2, yPos, 0, blue);
+            createWall(0.8, layerH, wallSize, wallSize/2, yPos, 0, blue);
+            // Передня стіна (з отвором для дверей)
+            if (i > 8) { // Верхня частина над входом
+                createWall(wallSize, layerH, 0.8, 0, yPos, wallSize/2, blue);
+            } else { // Стіни з боків від входу
+                createWall(6, layerH, 0.8, -4.5, yPos, wallSize/2, blue);
+                createWall(6, layerH, 0.8, 4.5, yPos, wallSize/2, blue);
+            }
+        }
+        // Підлога та Стеля
+        createWall(wallSize, 0.2, wallSize, 0, 0, 0, false);
+        createWall(wallSize, 0.5, wallSize, 0, wallHeight, 0, false);
+
+        // Золотий купол
+        const dome = new THREE.Mesh(
+            new THREE.SphereGeometry(7, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2),
+            new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 1, roughness: 0.1 })
+        );
+        dome.position.y = wallHeight;
+        temple.add(dome);
+        scene.add(temple);
+
+        // --- IMPROVED GRASS ---
+        function addFancyGrass() {
+            const loader = new THREE.TextureLoader();
+            const grassGeo = new THREE.PlaneGeometry(0.8, 0.8);
+            const grassMat = new THREE.MeshStandardMaterial({ color: 0x3d7a33, side: THREE.DoubleSide, alphaTest: 0.5 });
+            
+            for(let i = 0; i < 600; i++) {
+                const group = new THREE.Group();
                 const angle = Math.random() * Math.PI * 2;
-                const radius = 10 + Math.random() * 30; // Трава навколо храму
-                blade.position.set(Math.cos(angle) * radius, -0.1, Math.sin(angle) * radius);
-                blade.rotation.y = Math.random() * Math.PI;
-                blade.rotation.x = Math.random() * 0.2;
-                blade.receiveShadow = true;
-                scene.add(blade);
+                const radius = 12 + Math.random() * 45;
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+
+                for(let j=0; j<2; j++) { // Х-подібна трава для об'єму
+                    const p = new THREE.Mesh(grassGeo, grassMat);
+                    p.rotation.y = j * Math.PI/2 + Math.random();
+                    group.add(p);
+                }
+                group.position.set(x, -0.1, z);
+                scene.add(group);
             }
         }
-        addGrass();
+        addFancyGrass();
 
-        function createPalm(x, z) {
-            const group = new THREE.Group();
-            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.45, 8, 12), new THREE.MeshStandardMaterial({color: 0x3d2b1f}));
-            trunk.position.y = 4; trunk.castShadow = true;
-            group.add(trunk);
-            for(let i=0; i<8; i++) {
-                const leaf = new THREE.Mesh(new THREE.SphereGeometry(3.5, 8, 2), new THREE.MeshStandardMaterial({color: 0x228b22, side: THREE.DoubleSide}));
-                leaf.scale.set(1, 0.04, 0.4); leaf.position.y = 8; leaf.rotation.y = i * (Math.PI/4); leaf.rotation.z = 0.6;
-                leaf.castShadow = true; group.add(leaf);
+        // --- BIGGER PALMS ---
+        function createGrandPalm(x, z) {
+            const p = new THREE.Group();
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.6, 12, 12), new THREE.MeshStandardMaterial({color: 0x3d2b1f}));
+            trunk.position.y = 6; trunk.castShadow = true;
+            p.add(trunk);
+            for(let i=0; i<10; i++) {
+                const leaf = new THREE.Mesh(new THREE.SphereGeometry(5, 8, 2), new THREE.MeshStandardMaterial({color: 0x1e5d1e, side: THREE.DoubleSide}));
+                leaf.scale.set(1, 0.03, 0.4); leaf.position.y = 12; leaf.rotation.y = i * (Math.PI/5); leaf.rotation.z = 0.55;
+                leaf.castShadow = true; p.add(leaf);
             }
-            group.position.set(x, -0.5, z); scene.add(group);
+            p.position.set(x, -0.5, z); scene.add(p);
         }
-        [ [20,10], [-15,20], [10,-25], [-20,-10] ].forEach(p => createPalm(p[0], p[1]));
+        [ [40,20], [-35,40], [30,-45], [-40,-30] ].forEach(pos => createGrandPalm(pos[0], pos[1]));
 
-        // --- КЕРУВАННЯ ТА КОЛІЗІЯ ---
+        // --- CONTROLS & DYNAMIC COLLISION ---
         let joyId = null, lookId = null;
         let move = { x: 0, y: 0, startX: 0, startY: 0 };
         let rot = { yaw: 0, pitch: 0 };
@@ -196,21 +221,27 @@
                 const f = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion); f.y = 0; f.normalize();
                 const r = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion); r.y = 0; r.normalize();
                 
-                // Зберігаємо стару позицію для відкату при колізії
-                const oldPos = camera.position.clone();
-                
-                camera.position.addScaledVector(f, -move.y * 0.2);
-                camera.position.addScaledVector(r, move.x * 0.2);
+                const old = camera.position.clone();
+                camera.position.addScaledVector(f, -move.y * 0.25);
+                camera.position.addScaledVector(r, move.x * 0.25);
 
-                // --- ПЕРЕВІРКА КОЛІЗІЇ ---
-                // 1. Межі храму (якщо гравець ближче 5.5м до центру)
-                if (Math.abs(camera.position.x) < 5.5 && Math.abs(camera.position.z) < 5.5) {
-                    camera.position.copy(oldPos);
+                // --- КОЛІЗІЯ: ПЕРЕВІРКА СТІН ---
+                const limit = 7.1; // Внутрішня межа (половина wallSize)
+                const wallT = 0.8; // Товщина стін
+                
+                // Якщо ми намагаємося вийти крізь бічні стіни або задню
+                if (Math.abs(camera.position.x) > limit || camera.position.z < -limit) {
+                     camera.position.copy(old);
                 }
-                // 2. Межі острова (вода)
-                if (camera.position.length() > 53) {
-                    camera.position.copy(oldPos);
+                // Передня стіна (з отвором для дверей)
+                if (camera.position.z > limit) {
+                    // Якщо ми НЕ в отворі дверей (отвір від -1.5 до 1.5)
+                    if (Math.abs(camera.position.x) > 1.5) {
+                        camera.position.copy(old);
+                    }
                 }
+                // Межа острова
+                if (camera.position.length() > 78) camera.position.copy(old);
             }
             camera.rotation.y = rot.yaw; camera.rotation.x = rot.pitch;
             water.material.uniforms[ 'time' ].value += 1.0 / 60.0;
