@@ -1,12 +1,25 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Grand Temple: Audio & Fixed Teleport</title>
+    <title>Temple Pro: Music Fix</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; touch-action: none; }
+        body { margin: 0; overflow: hidden; background: #000; touch-action: none; font-family: sans-serif; }
         canvas { display: block; }
+        
+        /* Кнопка в углу */
+        #ui-layer {
+            position: absolute; top: 20px; right: 20px; z-index: 1000;
+        }
+        #music-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #fff; color: #fff;
+            padding: 10px 15px; border-radius: 30px;
+            cursor: pointer; backdrop-filter: blur(5px);
+            font-weight: bold; text-transform: uppercase; font-size: 12px;
+        }
+
         #joy-base {
             position: absolute; width: 100px; height: 100px;
             background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3);
@@ -16,15 +29,12 @@
             position: absolute; width: 40px; height: 40px;
             background: #fff; border-radius: 50%; top: 30px; left: 30px;
         }
-        #audio-prompt {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: white; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px;
-            font-family: sans-serif; cursor: pointer; z-index: 1000; text-align: center;
-        }
     </style>
 </head>
 <body>
-    <div id="audio-prompt">Натисніть, щоб почати гру та увімкнути звук</div>
+    <div id="ui-layer">
+        <button id="music-btn">ВКЛЮЧИТЬ ЗВУК</button>
+    </div>
     <div id="joy-base"><div id="joy-stick"></div></div>
 
     <script type="importmap">
@@ -36,37 +46,48 @@
         import { Sky } from 'three/addons/objects/Sky.js';
         import { Water } from 'three/addons/objects/Water.js';
 
-        // --- AUDIO SETUP ---
-        const worldMusic = new Audio('https://www.myinstants.com/media/sounds/jeffrey-epstein-edit-98984.mp3');
-        const templeMusic = new Audio('https://www.myinstants.com/media/sounds/lock-in-epstein-edition-slowed-64683.mp3');
-        worldMusic.loop = true;
-        templeMusic.loop = true;
+        // --- AUDIO ---
+        const worldAudio = new Audio('https://www.myinstants.com/media/sounds/jeffrey-epstein-edit-98984.mp3');
+        const templeAudio = new Audio('https://www.myinstants.com/media/sounds/lock-in-epstein-edition-slowed-64683.mp3');
+        worldAudio.loop = true;
+        templeAudio.loop = true;
+        
+        let musicActive = false;
         let isInside = false;
+        const btn = document.getElementById('music-btn');
 
-        document.getElementById('audio-prompt').onclick = function() {
-            this.style.display = 'none';
-            worldMusic.play();
+        btn.onclick = () => {
+            if (!musicActive) {
+                if (isInside) templeAudio.play(); else worldAudio.play();
+                btn.innerText = "ЗВУК: ВКЛ";
+                musicActive = true;
+            } else {
+                worldAudio.pause();
+                templeAudio.pause();
+                btn.innerText = "ЗВУК: ВЫКЛ";
+                musicActive = false;
+            }
         };
 
-        // --- SCENE ---
+        // --- SCENE SETUP ---
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.set(50, 3, 50);
+        camera.position.set(60, 3, 60);
         camera.rotation.order = 'YXZ';
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
         document.body.appendChild(renderer.domElement);
 
-        // --- LIGHTS & ENVIRONMENT ---
+        // --- LIGHTS & SKY ---
         scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.2));
         const sun = new THREE.Vector3();
         const sky = new Sky(); sky.scale.setScalar(10000); scene.add(sky);
         sun.setFromSphericalCoords(1, THREE.MathUtils.degToRad(85), THREE.MathUtils.degToRad(180));
         sky.material.uniforms['sunPosition'].value.copy(sun);
 
+        // --- ISLAND & WATER ---
         const water = new Water(new THREE.PlaneGeometry(3000, 3000), {
             textureWidth: 256, textureHeight: 256,
             waterNormals: new THREE.TextureLoader().load('https://threejs.org/examples/textures/waternormals.jpg', t => t.wrapS = t.wrapT = THREE.RepeatWrapping),
@@ -74,23 +95,20 @@
         });
         water.rotation.x = -Math.PI / 2; water.position.y = -1; scene.add(water);
 
-        const island = new THREE.Mesh(new THREE.CylinderGeometry(100, 110, 10, 32), new THREE.MeshStandardMaterial({ color: 0xeed2af }));
+        const island = new THREE.Mesh(new THREE.CylinderGeometry(110, 115, 10, 32), new THREE.MeshStandardMaterial({ color: 0xeed2af }));
         island.position.y = -5.5; scene.add(island);
 
-        // --- BETTER GRASS (ROBLOX STYLE) ---
-        const grassCount = 4000;
-        const grassGeo = new THREE.PlaneGeometry(0.25, 0.6);
+        // --- OPTIMIZED GRASS ---
+        const grassCount = 3500;
+        const grassGeo = new THREE.PlaneGeometry(0.3, 0.7);
         const grassMat = new THREE.MeshStandardMaterial({ color: 0x32CD32, side: THREE.DoubleSide });
         const instGrass = new THREE.InstancedMesh(grassGeo, grassMat, grassCount);
         const dummy = new THREE.Object3D();
-
         for (let i = 0; i < grassCount; i++) {
-            const a = Math.random() * Math.PI * 2, r = 15 + Math.random() * 80;
-            const x = Math.cos(a) * r, z = Math.sin(a) * r;
-            if (Math.abs(x) < 15 && Math.abs(z) < 15) { i--; continue; }
-            dummy.position.set(x, -0.6, z);
+            const a = Math.random() * Math.PI * 2, r = 18 + Math.random() * 85;
+            dummy.position.set(Math.cos(a)*r, -0.6, Math.sin(a)*r);
             dummy.rotation.y = Math.random() * Math.PI;
-            dummy.scale.setScalar(0.8 + Math.random() * 0.5);
+            dummy.scale.setScalar(0.7 + Math.random() * 0.6);
             dummy.updateMatrix();
             instGrass.setMatrixAt(i, dummy.matrix);
         }
@@ -98,7 +116,7 @@
 
         // --- GRAND TEMPLE ---
         const temple = new THREE.Group();
-        const wallH = 18, wallW = 24; // Збільшено розміри
+        const wallH = 20, wallW = 28;
         for(let i=0; i<18; i++) {
             const h = wallH/18, y = i*h + h/2, blue = i%2===0;
             const mat = new THREE.MeshStandardMaterial({ color: blue ? 0x0044ff : 0xffffff });
@@ -106,19 +124,19 @@
                 const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
                 m.position.set(px, y, pz); temple.add(m);
             };
-            box(wallW, 0.8, 0, -wallW/2); // Back
-            box(0.8, wallW, -wallW/2, 0); // Left
-            box(0.8, wallW, wallW/2, 0);  // Right
-            if(i > 10) box(wallW, 0.8, 0, wallW/2); // Front top
-            else { box(9, 0.8, -7.5, wallW/2); box(9, 0.8, 7.5, wallW/2); } // Door frame
+            box(wallW, 1, 0, -wallW/2); // Back
+            box(1, wallW, -wallW/2, 0); // Left
+            box(1, wallW, wallW/2, 0);  // Right
+            if(i > 10) box(wallW, 1, 0, wallW/2); // Front Top
+            else { box(10, 1, -9, wallW/2); box(10, 1, 9, wallW/2); } // Door frame
         }
-        const dome = new THREE.Mesh(new THREE.SphereGeometry(12, 32, 16, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshStandardMaterial({color: 0xffd700, metalness: 0.7}));
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(14, 32, 16, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshStandardMaterial({color: 0xffd700, metalness: 0.8}));
         dome.position.y = wallH; temple.add(dome);
         scene.add(temple);
 
-        // Двері - маркер телепорту
-        const door = new THREE.Mesh(new THREE.BoxGeometry(6, 10, 0.5), new THREE.MeshStandardMaterial({color: 0x442200}));
-        door.position.set(0, 5, wallW/2 + 0.1); scene.add(door);
+        // Входная дверь (Телепорт)
+        const door = new THREE.Mesh(new THREE.BoxGeometry(8, 11, 0.5), new THREE.MeshStandardMaterial({color: 0x442200}));
+        door.position.set(0, 5.5, wallW/2 + 0.2); scene.add(door);
 
         // --- CONTROLS ---
         let joyId = null, lookId = null;
@@ -153,7 +171,7 @@
             else if (e.pointerId === lookId) lookId = null;
         });
 
-        // --- MAIN LOOP ---
+        // --- LOOP ---
         function animate() {
             requestAnimationFrame(animate);
             if (joyId !== null) {
@@ -164,22 +182,18 @@
                 camera.position.addScaledVector(r, move.x * 0.4);
 
                 // TELEPORT & AUDIO SWITCH
-                const distToDoor = camera.position.distanceTo(new THREE.Vector3(0, 2, 12));
-                if (distToDoor < 3 && !isInside) {
-                    camera.position.set(0, 2.5, 0); // В центр храму
+                const distToDoor = camera.position.distanceTo(new THREE.Vector3(0, 2, wallW/2));
+                if (distToDoor < 4 && !isInside) {
+                    camera.position.set(0, 2.5, 0);
                     isInside = true;
-                    worldMusic.pause();
-                    templeMusic.play();
-                } else if (camera.position.z > 13 && isInside) { // Вихід
+                    if (musicActive) { worldAudio.pause(); templeAudio.play(); }
+                } else if (camera.position.length() > 20 && isInside) {
                     isInside = false;
-                    templeMusic.pause();
-                    worldMusic.play();
+                    if (musicActive) { templeAudio.pause(); worldAudio.play(); }
                 }
 
                 // COLLISION
-                const limit = wallW/2 - 0.5;
-                if (Math.abs(camera.position.x) > 95 || Math.abs(camera.position.z) > 95) camera.position.copy(old);
-                // Стіни храму
+                if (camera.position.length() > 105) camera.position.copy(old);
                 if (!isInside && Math.abs(camera.position.x) < wallW/2 + 1 && Math.abs(camera.position.z) < wallW/2 + 1) {
                     if (camera.position.z < wallW/2 - 1) camera.position.copy(old);
                 }
