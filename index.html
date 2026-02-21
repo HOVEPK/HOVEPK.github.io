@@ -3,42 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Temple Game: Sound Fix</title>
+    <title>Temple Island: Remastered</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; touch-action: none; font-family: sans-serif; }
+        body { margin: 0; overflow: hidden; background: #000; touch-action: none; font-family: 'Segoe UI', sans-serif; }
         canvas { display: block; }
         
-        /* Панель плеєрів */
-        #sound-panel {
-            position: absolute; top: 10px; right: 10px; z-index: 1000;
-            background: rgba(0,0,0,0.6); padding: 10px; border-radius: 15px;
-            backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2);
-            color: white; font-size: 12px; text-align: center;
+        #ui-layer { position: absolute; top: 20px; right: 20px; z-index: 1000; }
+        #start-btn {
+            background: #fff; color: #000; border: none; padding: 15px 30px;
+            border-radius: 50px; cursor: pointer; font-weight: bold;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: 0.3s;
         }
-        .player-box { margin-bottom: 5px; }
-        #temple-player { display: none; } /* Схований спочатку */
+        #start-btn:hover { transform: scale(1.05); background: #00ff88; }
 
         #joy-base {
-            position: absolute; width: 100px; height: 100px;
-            background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 50%; display: none; pointer-events: none; z-index: 100;
+            position: absolute; width: 120px; height: 120px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%; display: none; pointer-events: none; z-index: 100; backdrop-filter: blur(5px);
         }
         #joy-stick {
-            position: absolute; width: 40px; height: 40px;
-            background: #fff; border-radius: 50%; top: 30px; left: 30px;
+            position: absolute; width: 50px; height: 50px;
+            background: #fff; border-radius: 50%; top: 35px; left: 35px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
     </style>
 </head>
 <body>
 
-    <div id="sound-panel">
-        <div id="status">КЛІКНИ "PLAY" НИЖЧЕ:</div>
-        <div id="world-player" class="player-box">
-            <iframe width="110" height="70" src="https://www.myinstants.com/instant/jeffrey-epstein-edit-98984/embed/" frameborder="0" scrolling="no"></iframe>
-        </div>
-        <div id="temple-player" class="player-box">
-            <iframe width="110" height="70" src="https://www.myinstants.com/instant/lock-in-epstein-edition-slowed-64683/embed/" frameborder="0" scrolling="no"></iframe>
-        </div>
+    <div id="ui-layer">
+        <button id="start-btn">ПОЧАТИ ГРУ</button>
     </div>
 
     <div id="joy-base"><div id="joy-stick"></div></div>
@@ -52,71 +44,126 @@
         import { Sky } from 'three/addons/objects/Sky.js';
         import { Water } from 'three/addons/objects/Water.js';
 
-        const worldUI = document.getElementById('world-player');
-        const templeUI = document.getElementById('temple-player');
-        const statusText = document.getElementById('status');
-        let isInside = false;
+        // --- КОНФІГУРАЦІЯ ---
+        const CONFIG = {
+            islandRadius: 160,
+            templeSize: 60,
+            grassCount: 8000,
+            speed: 0.65
+        };
 
-        // --- SCENE SETUP ---
+        // --- АУДІО СИСТЕМА ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const beachSound = new Audio('https://www.soundjay.com/nature/ocean-wave-1.mp3');
+        const stepSound = new Audio('https://www.soundjay.com/footsteps/footsteps-4.mp3');
+        beachSound.loop = true;
+        stepSound.loop = true;
+
+        // --- СЦЕНА ---
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.set(100, 5, 100);
+        scene.fog = new THREE.FogExp2(0x88aabb, 0.002);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
+        camera.position.set(120, 6, 120);
         camera.rotation.order = 'YXZ';
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // --- SKY & SUN ---
-        scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.5));
+        // --- СВІТЛО ---
+        const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambient);
+
+        const sunLight = new THREE.DirectionalLight(0xffffff, 2);
+        sunLight.position.set(100, 100, 50);
+        scene.add(sunLight);
+
+        // --- ВОДА ТА НЕБО ---
         const sun = new THREE.Vector3();
         const sky = new Sky(); sky.scale.setScalar(10000); scene.add(sky);
-        sun.setFromSphericalCoords(1, THREE.MathUtils.degToRad(88), THREE.MathUtils.degToRad(180));
+        sun.setFromSphericalCoords(1, THREE.MathUtils.degToRad(87), THREE.MathUtils.degToRad(170));
         sky.material.uniforms['sunPosition'].value.copy(sun);
 
-        // --- WATER ---
-        const water = new Water(new THREE.PlaneGeometry(4000, 4000), {
-            textureWidth: 256, textureHeight: 256,
+        const water = new Water(new THREE.PlaneGeometry(10000, 10000), {
+            textureWidth: 512, textureHeight: 512,
             waterNormals: new THREE.TextureLoader().load('https://threejs.org/examples/textures/waternormals.jpg', t => t.wrapS = t.wrapT = THREE.RepeatWrapping),
-            sunDirection: sun, sunColor: 0xffffff, waterColor: 0x0044ff, distortionScale: 1.5
+            sunDirection: sun, sunColor: 0xffffff, waterColor: 0x001e0f, distortionScale: 3.7
         });
-        water.rotation.x = -Math.PI / 2; water.position.y = -1; scene.add(water);
+        water.rotation.x = -Math.PI / 2;
+        scene.add(water);
 
-        const island = new THREE.Mesh(new THREE.CylinderGeometry(160, 170, 10, 32), new THREE.MeshStandardMaterial({ color: 0xeed2af }));
-        island.position.y = -5.5; scene.add(island);
+        // --- ОСТРІВ ---
+        const islandGeo = new THREE.CylinderGeometry(CONFIG.islandRadius, CONFIG.islandRadius + 10, 10, 64);
+        const islandMat = new THREE.MeshStandardMaterial({ color: 0xdfc48c, roughness: 0.8 });
+        const island = new THREE.Mesh(islandGeo, islandMat);
+        island.position.y = -5;
+        scene.add(island);
 
-        // --- GRASS ---
-        const instGrass = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.4, 1), new THREE.MeshStandardMaterial({ color: 0x22ff22, side: THREE.DoubleSide }), 5000);
+        // --- АНІМОВАНА ТРАВА (ВІТЕР) ---
+        const grassMat = new THREE.MeshStandardMaterial({ 
+            color: 0x44aa44, 
+            side: THREE.DoubleSide 
+        });
+
+        // Кастомний шейдер для вітру
+        grassMat.onBeforeCompile = (shader) => {
+            shader.uniforms.uTime = { value: 0 };
+            shader.vertexShader = `
+                uniform float uTime;
+                ${shader.vertexShader}
+            `.replace(
+                `#include <begin_vertex>`,
+                `
+                #include <begin_vertex>
+                float wind = sin(uTime + position.x * 0.5) * pow(uv.y, 2.0) * 0.4;
+                transformed.x += wind;
+                transformed.z += wind;
+                `
+            );
+            grassMat.userData.shader = shader;
+        };
+
+        const instGrass = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.4, 1.2), grassMat, CONFIG.grassCount);
         const dummy = new THREE.Object3D();
-        for (let i = 0; i < 5000; i++) {
-            const a = Math.random() * Math.PI * 2, r = 45 + Math.random() * 110;
-            dummy.position.set(Math.cos(a)*r, -0.4, Math.sin(a)*r);
+        for (let i = 0; i < CONFIG.grassCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 55 + Math.random() * (CONFIG.islandRadius - 60);
+            dummy.position.set(Math.cos(angle) * radius, -0.2, Math.sin(angle) * radius);
             dummy.rotation.y = Math.random() * Math.PI;
+            dummy.scale.setScalar(0.7 + Math.random() * 0.7);
             dummy.updateMatrix();
             instGrass.setMatrixAt(i, dummy.matrix);
         }
         scene.add(instGrass);
 
-        // --- MEGA TEMPLE ---
+        // --- ХРАМ ---
         const temple = new THREE.Group();
-        const wallH = 35, wallW = 60;
-        for(let i=0; i<25; i++) {
-            const h = wallH/25, y = i*h + h/2, blue = i%2===0;
-            const mat = new THREE.MeshStandardMaterial({ color: blue ? 0x0044ff : 0xffffff });
-            const box = (w, d, px, pz) => {
-                const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-                m.position.set(px, y, pz); temple.add(m);
-            };
-            box(wallW, 2, 0, -wallW/2); box(2, wallW, -wallW/2, 0); box(2, wallW, wallW/2, 0);
-            if(i > 15) box(wallW, 2, 0, wallW/2);
-            else { box(24, 2, -18, wallW/2); box(24, 2, 18, wallW/2); }
+        const wallH = 40, wallW = CONFIG.templeSize;
+        const createWallSegment = (w, h, d, x, y, z, color) => {
+            const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color }));
+            m.position.set(x, y, z); temple.add(m);
+        };
+
+        for(let i=0; i<30; i++) {
+            const h = wallH/30, y = i*h + h/2, isBlue = i%2===0;
+            const col = isBlue ? 0x0055ff : 0xffffff;
+            createWallSegment(wallW, h, 2, 0, y, -wallW/2, col); // Back
+            createWallSegment(2, h, wallW, -wallW/2, y, 0, col); // Left
+            createWallSegment(2, h, wallW, wallW/2, y, 0, col);  // Right
+            if(i > 18) createWallSegment(wallW, h, 2, 0, y, wallW/2, col); // Front Top
+            else { 
+                createWallSegment(wallW/2-5, h, 2, -wallW/4-2.5, y, wallW/2, col); 
+                createWallSegment(wallW/2-5, h, 2, wallW/4+2.5, y, wallW/2, col); 
+            }
         }
-        const dome = new THREE.Mesh(new THREE.SphereGeometry(30, 32, 16, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshStandardMaterial({color: 0xffd700, metalness: 0.9}));
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(wallW/2, 32, 16, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshStandardMaterial({color: 0xffaa00, metalness: 0.8, roughness: 0.1}));
         dome.position.y = wallH; temple.add(dome);
         scene.add(temple);
 
-        // --- CONTROLS ---
+        // --- КОНТРОЛЕР ТА РУХ ---
         let joyId = null, lookId = null;
         let move = { x: 0, y: 0, startX: 0, startY: 0 };
         let rot = { yaw: 0, pitch: 0 };
@@ -126,58 +173,71 @@
         window.addEventListener('pointerdown', e => {
             if (e.clientX < window.innerWidth / 2) {
                 joyId = e.pointerId; move.startX = e.clientX; move.startY = e.clientY;
-                joyB.style.display = 'block'; joyB.style.left = (e.clientX-50)+'px'; joyB.style.top = (e.clientY-50)+'px';
+                joyB.style.display = 'block'; joyB.style.left = (e.clientX-60)+'px'; joyB.style.top = (e.clientY-60)+'px';
             } else { lookId = e.pointerId; lastLook.x = e.clientX; lastLook.y = e.clientY; }
         });
 
         window.addEventListener('pointermove', e => {
             if (e.pointerId === joyId) {
                 let dx = e.clientX - move.startX, dy = e.clientY - move.startY;
-                let d = Math.min(Math.sqrt(dx*dx+dy*dy), 40), a = Math.atan2(dy, dx);
-                move.x = Math.cos(a)*(d/40); move.y = Math.sin(a)*(d/40);
+                let d = Math.min(Math.sqrt(dx*dx+dy*dy), 50), a = Math.atan2(dy, dx);
+                move.x = Math.cos(a)*(d/50); move.y = Math.sin(a)*(d/50);
                 joyS.style.transform = `translate(${Math.cos(a)*d}px, ${Math.sin(a)*d}px)`;
             } else if (e.pointerId === lookId) {
-                rot.yaw -= (e.clientX - lastLook.x) * 0.007;
-                rot.pitch -= (e.clientY - lastLook.y) * 0.007;
+                rot.yaw -= (e.clientX - lastLook.x) * 0.005;
+                rot.pitch -= (e.clientY - lastLook.y) * 0.005;
                 rot.pitch = Math.max(-1.4, Math.min(1.4, rot.pitch));
                 lastLook.x = e.clientX; lastLook.y = e.clientY;
             }
         });
 
-        window.addEventListener('pointerup', () => { joyId = null; move.x = 0; move.y = 0; joyB.style.display = 'none'; lookId = null; });
+        window.addEventListener('pointerup', () => { 
+            joyId = null; move.x = 0; move.y = 0; joyB.style.display = 'none'; lookId = null;
+            stepSound.pause(); 
+        });
 
-        // --- ANIMATE ---
+        // --- СТАРТ ---
+        document.getElementById('start-btn').onclick = function() {
+            audioCtx.resume();
+            beachSound.play();
+            this.parentElement.style.display = 'none';
+        };
+
+        // --- ЦИКЛ АНІМАЦІЇ ---
+        const clock = new THREE.Clock();
         function animate() {
             requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            if (grassMat.userData.shader) grassMat.userData.shader.uniforms.uTime.value = time;
+
             if (joyId !== null) {
                 const f = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion); f.y = 0; f.normalize();
                 const r = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion); r.y = 0; r.normalize();
-                const old = camera.position.clone();
-                camera.position.addScaledVector(f, -move.y * 0.7);
-                camera.position.addScaledVector(r, move.x * 0.7);
-
-                // TELEPORT & SOUND SWITCH
-                const distToDoor = camera.position.distanceTo(new THREE.Vector3(0, 5, wallW/2));
-                if (distToDoor < 10 && !isInside) {
-                    camera.position.set(0, 5, 0); // В центр храму
-                    isInside = true;
-                    worldUI.style.display = 'none';
-                    templeUI.style.display = 'block';
-                    statusText.innerText = "ХРАМ: ТИСНИ PLAY";
-                } else if (camera.position.length() > 50 && isInside) {
-                    isInside = false; // Вихід
-                    worldUI.style.display = 'block';
-                    templeUI.style.display = 'none';
-                    statusText.innerText = "ОСТРІВ: ТИСНИ PLAY";
+                camera.position.addScaledVector(f, -move.y * CONFIG.speed);
+                camera.position.addScaledVector(r, move.x * CONFIG.speed);
+                
+                // Звук кроків
+                if(stepSound.paused) stepSound.play();
+                
+                // Телепорт
+                if (camera.position.distanceTo(new THREE.Vector3(0, 5, wallW/2)) < 10) {
+                    camera.position.set(0, 5, 0);
                 }
-
-                if (camera.position.length() > 155) camera.position.copy(old);
             }
+
             camera.rotation.y = rot.yaw; camera.rotation.x = rot.pitch;
-            water.material.uniforms['time'].value += 0.01;
+            water.material.uniforms['time'].value += delta;
             renderer.render(scene, camera);
         }
         animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
