@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Optimized Temple Pro</title>
+    <title>Grand Temple: Audio & Fixed Teleport</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; touch-action: none; }
         canvas { display: block; }
@@ -16,9 +16,15 @@
             position: absolute; width: 40px; height: 40px;
             background: #fff; border-radius: 50%; top: 30px; left: 30px;
         }
+        #audio-prompt {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: white; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px;
+            font-family: sans-serif; cursor: pointer; z-index: 1000; text-align: center;
+        }
     </style>
 </head>
 <body>
+    <div id="audio-prompt">Натисніть, щоб почати гру та увімкнути звук</div>
     <div id="joy-base"><div id="joy-stick"></div></div>
 
     <script type="importmap">
@@ -30,94 +36,89 @@
         import { Sky } from 'three/addons/objects/Sky.js';
         import { Water } from 'three/addons/objects/Water.js';
 
-        // --- SETUP ---
+        // --- AUDIO SETUP ---
+        const worldMusic = new Audio('https://www.myinstants.com/media/sounds/jeffrey-epstein-edit-98984.mp3');
+        const templeMusic = new Audio('https://www.myinstants.com/media/sounds/lock-in-epstein-edition-slowed-64683.mp3');
+        worldMusic.loop = true;
+        templeMusic.loop = true;
+        let isInside = false;
+
+        document.getElementById('audio-prompt').onclick = function() {
+            this.style.display = 'none';
+            worldMusic.play();
+        };
+
+        // --- SCENE ---
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(40, 2.2, 40);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera.position.set(50, 3, 50);
         camera.rotation.order = 'YXZ';
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
         document.body.appendChild(renderer.domElement);
 
-        // --- LIGHTS ---
-        scene.add(new THREE.HemisphereLight(0x87CEEB, 0x3d2b1f, 1.2));
+        // --- LIGHTS & ENVIRONMENT ---
+        scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.2));
         const sun = new THREE.Vector3();
         const sky = new Sky(); sky.scale.setScalar(10000); scene.add(sky);
         sun.setFromSphericalCoords(1, THREE.MathUtils.degToRad(85), THREE.MathUtils.degToRad(180));
         sky.material.uniforms['sunPosition'].value.copy(sun);
 
-        // --- WATER & ISLAND ---
-        const water = new Water(new THREE.PlaneGeometry(2000, 2000), {
+        const water = new Water(new THREE.PlaneGeometry(3000, 3000), {
             textureWidth: 256, textureHeight: 256,
             waterNormals: new THREE.TextureLoader().load('https://threejs.org/examples/textures/waternormals.jpg', t => t.wrapS = t.wrapT = THREE.RepeatWrapping),
             sunDirection: sun, sunColor: 0xffffff, waterColor: 0x001e0f, distortionScale: 2.0
         });
         water.rotation.x = -Math.PI / 2; water.position.y = -1; scene.add(water);
 
-        const island = new THREE.Mesh(new THREE.CylinderGeometry(80, 85, 10, 32), new THREE.MeshStandardMaterial({ color: 0xeed2af }));
-        island.position.y = -5.5; island.receiveShadow = true; scene.add(island);
+        const island = new THREE.Mesh(new THREE.CylinderGeometry(100, 110, 10, 32), new THREE.MeshStandardMaterial({ color: 0xeed2af }));
+        island.position.y = -5.5; scene.add(island);
 
-        // --- OPTIMIZED GRASS (InstancedMesh) ---
-        const grassCount = 3000;
-        const grassGeo = new THREE.PlaneGeometry(0.2, 0.5);
+        // --- BETTER GRASS (ROBLOX STYLE) ---
+        const grassCount = 4000;
+        const grassGeo = new THREE.PlaneGeometry(0.25, 0.6);
         const grassMat = new THREE.MeshStandardMaterial({ color: 0x32CD32, side: THREE.DoubleSide });
-        const instancedGrass = new THREE.InstancedMesh(grassGeo, grassMat, grassCount);
+        const instGrass = new THREE.InstancedMesh(grassGeo, grassMat, grassCount);
         const dummy = new THREE.Object3D();
 
         for (let i = 0; i < grassCount; i++) {
-            const a = Math.random() * Math.PI * 2, r = 10 + Math.random() * 65;
+            const a = Math.random() * Math.PI * 2, r = 15 + Math.random() * 80;
             const x = Math.cos(a) * r, z = Math.sin(a) * r;
-            if (Math.abs(x) < 9 && Math.abs(z) < 9) { i--; continue; } // Пропуск зони храму
-
+            if (Math.abs(x) < 15 && Math.abs(z) < 15) { i--; continue; }
             dummy.position.set(x, -0.6, z);
             dummy.rotation.y = Math.random() * Math.PI;
+            dummy.scale.setScalar(0.8 + Math.random() * 0.5);
             dummy.updateMatrix();
-            instancedGrass.setMatrixAt(i, dummy.matrix);
+            instGrass.setMatrixAt(i, dummy.matrix);
         }
-        scene.add(instancedGrass);
+        scene.add(instGrass);
 
-        // --- PALMS ---
-        const palmLeaves = [];
-        function addPalms() {
-            [[30,30], [-30,25], [25,-35], [-35,-20]].forEach(pos => {
-                const p = new THREE.Group();
-                const t = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.4, 12, 8), new THREE.MeshStandardMaterial({color: 0x3d2b1f}));
-                t.position.y = 6; p.add(t);
-                for(let j=0; j<6; j++){
-                    const l = new THREE.Mesh(new THREE.SphereGeometry(5, 6, 2), new THREE.MeshStandardMaterial({color: 0x228B22}));
-                    l.scale.set(1, 0.05, 0.3); l.position.y = 12; l.rotation.y = j; l.rotation.z = 0.7;
-                    p.add(l); palmLeaves.push(l);
-                }
-                p.position.set(pos[0], -0.5, pos[1]); scene.add(p);
-            });
-        }
-        addPalms();
-
-        // --- TEMPLE (Simplified Geometry) ---
+        // --- GRAND TEMPLE ---
         const temple = new THREE.Group();
-        const wallH = 12, wallW = 16;
-        for(let i=0; i<12; i++) { // Менше шарів для FPS
-            const h = wallH/12, y = i*h + h/2, blue = i%2===0;
+        const wallH = 18, wallW = 24; // Збільшено розміри
+        for(let i=0; i<18; i++) {
+            const h = wallH/18, y = i*h + h/2, blue = i%2===0;
             const mat = new THREE.MeshStandardMaterial({ color: blue ? 0x0044ff : 0xffffff });
-            const b = new THREE.Mesh(new THREE.BoxGeometry(wallW, h, 0.5), mat); b.position.set(0, y, -wallW/2); temple.add(b);
-            const l = new THREE.Mesh(new THREE.BoxGeometry(0.5, h, wallW), mat); l.position.set(-wallW/2, y, 0); temple.add(l);
-            const r = new THREE.Mesh(new THREE.BoxGeometry(0.5, h, wallW), mat); r.position.set(wallW/2, y, 0); temple.add(r);
-            if(i > 8) {
-                const f = new THREE.Mesh(new THREE.BoxGeometry(wallW, h, 0.5), mat); f.position.set(0, y, wallW/2); temple.add(f);
-            } else {
-                const fL = new THREE.Mesh(new THREE.BoxGeometry(6, h, 0.5), mat); fL.position.set(-5, y, wallW/2); temple.add(fL);
-                const fR = new THREE.Mesh(new THREE.BoxGeometry(6, h, 0.5), mat); fR.position.set(5, y, wallW/2); temple.add(fR);
-            }
+            const box = (w, d, px, pz) => {
+                const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+                m.position.set(px, y, pz); temple.add(m);
+            };
+            box(wallW, 0.8, 0, -wallW/2); // Back
+            box(0.8, wallW, -wallW/2, 0); // Left
+            box(0.8, wallW, wallW/2, 0);  // Right
+            if(i > 10) box(wallW, 0.8, 0, wallW/2); // Front top
+            else { box(9, 0.8, -7.5, wallW/2); box(9, 0.8, 7.5, wallW/2); } // Door frame
         }
-        const dome = new THREE.Mesh(new THREE.SphereGeometry(8, 16, 12, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshStandardMaterial({color: 0xffd700}));
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(12, 32, 16, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshStandardMaterial({color: 0xffd700, metalness: 0.7}));
         dome.position.y = wallH; temple.add(dome);
         scene.add(temple);
 
-        const door = new THREE.Mesh(new THREE.BoxGeometry(4, 7, 0.1), new THREE.MeshStandardMaterial({color: 0x553311}));
-        door.position.set(0, 3.5, 8); scene.add(door);
+        // Двері - маркер телепорту
+        const door = new THREE.Mesh(new THREE.BoxGeometry(6, 10, 0.5), new THREE.MeshStandardMaterial({color: 0x442200}));
+        door.position.set(0, 5, wallW/2 + 0.1); scene.add(door);
 
         // --- CONTROLS ---
         let joyId = null, lookId = null;
@@ -127,12 +128,10 @@
         const joyB = document.getElementById('joy-base'), joyS = document.getElementById('joy-stick');
 
         window.addEventListener('pointerdown', e => {
-            if (e.clientX < window.innerWidth / 2 && joyId === null) {
+            if (e.clientX < window.innerWidth / 2) {
                 joyId = e.pointerId; move.startX = e.clientX; move.startY = e.clientY;
-                joyB.style.display = 'block'; joyB.style.left = (e.clientX - 50) + 'px'; joyB.style.top = (e.clientY - 50) + 'px';
-            } else if (lookId === null) {
-                lookId = e.pointerId; lastLook.x = e.clientX; lastLook.y = e.clientY;
-            }
+                joyB.style.display = 'block'; joyB.style.left = (e.clientX-50)+'px'; joyB.style.top = (e.clientY-50)+'px';
+            } else { lookId = e.pointerId; lastLook.x = e.clientX; lastLook.y = e.clientY; }
         });
 
         window.addEventListener('pointermove', e => {
@@ -154,44 +153,39 @@
             else if (e.pointerId === lookId) lookId = null;
         });
 
-        // --- ANIMATION LOOP ---
+        // --- MAIN LOOP ---
         function animate() {
             requestAnimationFrame(animate);
-            const t = Date.now() * 0.002;
-
-            // Вітер для пальм
-            palmLeaves.forEach((l, i) => { l.rotation.z = 0.7 + Math.sin(t + i) * 0.05; });
-
             if (joyId !== null) {
                 const f = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion); f.y = 0; f.normalize();
                 const r = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion); r.y = 0; r.normalize();
                 const old = camera.position.clone();
-                camera.position.addScaledVector(f, -move.y * 0.35);
-                camera.position.addScaledVector(r, move.x * 0.35);
+                camera.position.addScaledVector(f, -move.y * 0.4);
+                camera.position.addScaledVector(r, move.x * 0.4);
 
-                // TELEPORT
-                if (Math.abs(camera.position.x) < 2.2 && Math.abs(camera.position.z - 8.1) < 0.5) {
-                    camera.position.set(0, 2, 0);
+                // TELEPORT & AUDIO SWITCH
+                const distToDoor = camera.position.distanceTo(new THREE.Vector3(0, 2, 12));
+                if (distToDoor < 3 && !isInside) {
+                    camera.position.set(0, 2.5, 0); // В центр храму
+                    isInside = true;
+                    worldMusic.pause();
+                    templeMusic.play();
+                } else if (camera.position.z > 13 && isInside) { // Вихід
+                    isInside = false;
+                    templeMusic.pause();
+                    worldMusic.play();
                 }
 
-                // COLLISION (UP CLOSE)
-                const margin = 0.2; // Можна підходити майже впритул
-                const limit = 8.0 - margin;
-                const inX = Math.abs(camera.position.x), inZ = Math.abs(camera.position.z);
-
-                // Стіни (зовні та всередині)
-                if (inX > 8.5 || inZ > 8.5) { // Острів
-                    if (camera.position.length() > 79) camera.position.copy(old);
-                } else {
-                    // Колізія стін храму
-                    if (inX > limit || (inZ > limit && inZ < 8.5)) {
-                       if (!(inX < 2 && camera.position.z > 7.5)) camera.position.copy(old);
-                    }
+                // COLLISION
+                const limit = wallW/2 - 0.5;
+                if (Math.abs(camera.position.x) > 95 || Math.abs(camera.position.z) > 95) camera.position.copy(old);
+                // Стіни храму
+                if (!isInside && Math.abs(camera.position.x) < wallW/2 + 1 && Math.abs(camera.position.z) < wallW/2 + 1) {
+                    if (camera.position.z < wallW/2 - 1) camera.position.copy(old);
                 }
             }
-
             camera.rotation.y = rot.yaw; camera.rotation.x = rot.pitch;
-            water.material.uniforms['time'].value += 0.016;
+            water.material.uniforms['time'].value += 1.0 / 60.0;
             renderer.render(scene, camera);
         }
         animate();
