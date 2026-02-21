@@ -1,47 +1,3 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tropical Island 3D</title>
-
-<style>
-body { margin:0; overflow:hidden; background:#000; touch-action:none; }
-#joy-ui {
-    position:absolute;
-    bottom:50px;
-    left:50px;
-    width:100px;
-    height:100px;
-    border-radius:50%;
-    background:rgba(255,255,255,0.08);
-    border:2px solid rgba(255,255,255,0.3);
-    display:none;
-}
-#joy-knob{
-    position:absolute;
-    width:40px;
-    height:40px;
-    background:#fff;
-    border-radius:50%;
-    top:30px;
-    left:30px;
-}
-</style>
-</head>
-
-<body>
-<div id="joy-ui"><div id="joy-knob"></div></div>
-
-<script type="importmap">
-{
- "imports": {
-   "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-   "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
- }
-}
-</script>
-
 <script type="module">
 import * as THREE from 'three';
 import { Sky } from 'three/addons/objects/Sky.js';
@@ -54,11 +10,11 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0x88ccee, 0.0009);
 
-const camera = new THREE.PerspectiveCamera(65, innerWidth/innerHeight, 0.1, 15000);
-camera.position.set(280,45,280);
-camera.rotation.order='YXZ';
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 15000);
+camera.position.set(0, 20, 200);
+camera.rotation.order = "YXZ";
 
-const renderer = new THREE.WebGLRenderer({antialias:true});
+const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -75,7 +31,7 @@ composer.addPass(new UnrealBloomPass(
     0.6,0.4,0.85
 ));
 
-// HDR окружение
+// HDR
 new RGBELoader()
 .setPath('https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/')
 .load('venice_sunset_1k.hdr', tex=>{
@@ -84,13 +40,12 @@ new RGBELoader()
 });
 
 // Свет
-scene.add(new THREE.HemisphereLight(0xffffff,0x444444,1.3));
-const sunLight = new THREE.DirectionalLight(0xffffff,2.5);
-sunLight.position.set(200,500,100);
-sunLight.castShadow=true;
-sunLight.shadow.mapSize.set(2048,2048);
-sunLight.shadow.bias=-0.0001;
-scene.add(sunLight);
+scene.add(new THREE.HemisphereLight(0xffffff,0x444444,1.2));
+const sun = new THREE.DirectionalLight(0xffffff,2);
+sun.position.set(200,500,100);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+scene.add(sun);
 
 // Небо
 const sky = new Sky();
@@ -100,10 +55,6 @@ scene.add(sky);
 const sunPos = new THREE.Vector3();
 sunPos.setFromSphericalCoords(1,THREE.MathUtils.degToRad(82),THREE.MathUtils.degToRad(170));
 sky.material.uniforms['sunPosition'].value.copy(sunPos);
-sky.material.uniforms['turbidity'].value=8;
-sky.material.uniforms['rayleigh'].value=3;
-sky.material.uniforms['mieCoefficient'].value=0.005;
-sky.material.uniforms['mieDirectionalG'].value=0.8;
 
 // Вода
 const water = new Water(
@@ -121,98 +72,119 @@ const water = new Water(
         distortionScale:4
     }
 );
-water.rotation.x=-Math.PI/2;
-water.position.y=-5;
-water.material.uniforms['size'].value=8;
+water.rotation.x = -Math.PI/2;
+water.position.y = -5;
 scene.add(water);
 
 // Остров
 const island = new THREE.Mesh(
     new THREE.CylinderGeometry(450,480,25,64),
-    new THREE.MeshStandardMaterial({
-        color:0x5a7a3a,
-        roughness:0.9
-    })
+    new THREE.MeshStandardMaterial({ color:0x5a7a3a, roughness:0.9 })
 );
-island.position.y=-10;
-island.receiveShadow=true;
+island.position.y = -10;
 scene.add(island);
 
-// Центральное здание (нейтральное)
-const structure = new THREE.Group();
-for(let i=0;i<8;i++){
-    const layer = new THREE.Mesh(
-        new THREE.BoxGeometry(100,8,100),
-        new THREE.MeshStandardMaterial({
-            color: i%2?0xffffff:0x0033aa,
-            roughness:0.6
-        })
-    );
-    layer.position.y=i*8+4;
-    layer.castShadow=true;
-    structure.add(layer);
-}
-const dome = new THREE.Mesh(
-    new THREE.SphereGeometry(50,40,40,0,Math.PI*2,0,Math.PI/2),
-    new THREE.MeshStandardMaterial({
-        color:0xffcc00,
-        metalness:1,
-        roughness:0.05,
-        envMapIntensity:2
-    })
-);
-dome.position.y=70;
-structure.add(dome);
-structure.position.y=5;
-scene.add(structure);
+// ---------- МОБИЛЬНОЕ УПРАВЛЕНИЕ ----------
 
-// Пальмы
-function addPalm(x,z){
-    const p=new THREE.Group();
-    const trunk=new THREE.Mesh(
-        new THREE.CylinderGeometry(1.5,3,65),
-        new THREE.MeshStandardMaterial({color:0x443322})
-    );
-    trunk.position.y=32.5;
-    p.add(trunk);
+let move = { active:false, id:null, startX:0, startY:0, x:0, y:0 };
+let look = { active:false, id:null, lastX:0, lastY:0 };
+let rotation = { yaw:0, pitch:0 };
 
-    for(let i=0;i<8;i++){
-        const leaf=new THREE.Mesh(
-            new THREE.PlaneGeometry(35,7),
-            new THREE.MeshStandardMaterial({
-                color:0x113300,
-                side:THREE.DoubleSide
-            })
-        );
-        leaf.position.y=65;
-        leaf.rotation.y=i;
-        leaf.rotation.z=0.5;
-        leaf.translateX(15);
-        p.add(leaf);
+const joyUI = document.getElementById("joy-ui");
+const knob = document.getElementById("joy-knob");
+
+window.addEventListener("pointerdown", e=>{
+    if(e.clientX < innerWidth/2){
+        move.active = true;
+        move.id = e.pointerId;
+        move.startX = e.clientX;
+        move.startY = e.clientY;
+
+        joyUI.style.display = "block";
+        joyUI.style.left = (e.clientX - 50) + "px";
+        joyUI.style.top = (e.clientY - 50) + "px";
+    } else {
+        look.active = true;
+        look.id = e.pointerId;
+        look.lastX = e.clientX;
+        look.lastY = e.clientY;
+    }
+});
+
+window.addEventListener("pointermove", e=>{
+    if(e.pointerId === move.id){
+        let dx = e.clientX - move.startX;
+        let dy = e.clientY - move.startY;
+
+        let dist = Math.min(Math.sqrt(dx*dx+dy*dy), 40);
+        let angle = Math.atan2(dy, dx);
+
+        move.x = Math.cos(angle) * (dist/40);
+        move.y = Math.sin(angle) * (dist/40);
+
+        knob.style.transform =
+            `translate(${Math.cos(angle)*dist}px,${Math.sin(angle)*dist}px)`;
     }
 
-    p.position.set(x,5,z);
-    scene.add(p);
-}
-for(let i=0;i<15;i++)
-    addPalm(Math.cos(i)*320,Math.sin(i)*320);
+    if(e.pointerId === look.id){
+        rotation.yaw -= (e.clientX - look.lastX) * 0.005;
+        rotation.pitch -= (e.clientY - look.lastY) * 0.005;
 
-// Анимация
+        rotation.pitch = Math.max(-1.4, Math.min(1.4, rotation.pitch));
+
+        look.lastX = e.clientX;
+        look.lastY = e.clientY;
+    }
+});
+
+window.addEventListener("pointerup", e=>{
+    if(e.pointerId === move.id){
+        move.active = false;
+        move.x = 0;
+        move.y = 0;
+        joyUI.style.display = "none";
+        knob.style.transform = "translate(0px,0px)";
+    }
+    if(e.pointerId === look.id){
+        look.active = false;
+    }
+});
+
+// ---------- АНИМАЦИЯ ----------
+
 function animate(){
     requestAnimationFrame(animate);
 
-    water.material.uniforms['time'].value+=0.01;
+    // движение
+    if(move.active){
+        const forward = new THREE.Vector3(0,0,-1)
+            .applyQuaternion(camera.quaternion)
+            .setY(0)
+            .normalize();
 
-    scene.traverse(obj=>{
-        if(obj.geometry && obj.geometry.type==="PlaneGeometry" && obj.position.y===5){
-            obj.rotation.z=Math.sin(Date.now()*0.002+obj.position.x)*0.05;
+        const right = new THREE.Vector3(1,0,0)
+            .applyQuaternion(camera.quaternion)
+            .setY(0)
+            .normalize();
+
+        camera.position.addScaledVector(forward, -move.y * 3);
+        camera.position.addScaledVector(right, move.x * 3);
+
+        // граница острова
+        if(camera.position.length() > 450){
+            camera.position.setLength(450);
         }
-    });
+    }
+
+    // вращение камеры
+    camera.rotation.y = rotation.yaw;
+    camera.rotation.x = rotation.pitch;
+
+    water.material.uniforms["time"].value += 0.01;
 
     composer.render();
 }
+
 animate();
 
 </script>
-</body>
-</html>
