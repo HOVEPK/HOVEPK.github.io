@@ -3,204 +3,421 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Симулятор Фурри-Прикола</title>
+    <title>Симулятор Суетолога: PRO</title>
     <style>
+        :root {
+            --bg: #121216;
+            --panel-bg: #1e1e24;
+            --accent: #ff79c6;
+            --accent-glow: rgba(255, 121, 198, 0.5);
+            --text: #f8f8f2;
+            --green: #50fa7b;
+            --cyan: #8be9fd;
+            --gold: #f1fa8c;
+        }
+
         body {
-            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
-            background-color: #2b2b2b;
-            color: #ffffff;
-            text-align: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             overflow: hidden;
+            user-select: none;
+            background-image: radial-gradient(circle at 50% 50%, #2a2a35 0%, #121216 100%);
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            width: 90%;
+            max-width: 1200px;
+            height: 85vh;
+        }
+
+        /* ЛЕВАЯ ПАНЕЛЬ: ИГРА */
+        .game-panel {
+            flex: 1;
+            background: var(--panel-bg);
+            border-radius: 20px;
+            border: 2px solid #333;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            user-select: none;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
         }
-        h1 { 
-            color: #ff79c6; 
-            text-shadow: 2px 2px #bd93f9; 
-            margin-bottom: 5px;
+
+        h1 {
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent-glow);
+            margin-top: 20px;
+            font-size: 2.5em;
+            text-align: center;
         }
-        #score-container { 
-            font-size: 2em; 
-            margin-bottom: 40px; 
-            color: #50fa7b; 
-            background: rgba(0,0,0,0.3);
-            padding: 10px 20px;
-            border-radius: 20px;
+
+        .score-box {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: var(--green);
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px 30px;
+            border-radius: 15px;
+            border: 1px solid var(--green);
+            box-shadow: 0 0 15px rgba(80, 250, 123, 0.2);
+            margin-bottom: 40px;
+            text-align: center;
         }
-        
-        #furry-btn {
-            font-size: 120px;
+
+        #uwu-count { color: #fff; }
+
+        .bps-box {
+            color: var(--cyan);
+            font-size: 1.2em;
+            margin-top: -30px;
+            margin-bottom: 40px;
+        }
+
+        .main-btn {
+            font-size: 130px;
             background: none;
             border: none;
             cursor: pointer;
-            transition: transform 0.05s;
-            filter: drop-shadow(0 0 20px #ff79c6);
-            outline: none;
+            transition: transform 0.05s, filter 0.3s;
+            filter: drop-shadow(0 0 30px var(--accent-glow));
         }
-        #furry-btn:active { 
-            transform: scale(0.85) rotate(10deg); 
-        }
-        
-        #shop {
-            margin-top: 50px;
-            padding: 20px;
-            border: 3px dashed #ffb86c;
-            border-radius: 15px;
-            background: rgba(255, 184, 108, 0.15);
-            box-shadow: 0 0 15px rgba(255, 184, 108, 0.3);
-        }
-        .upgrade {
-            font-size: 1.1em;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 10px;
-            background-color: #ffb86c;
-            color: #282c34;
-            font-weight: bold;
-            cursor: pointer;
-            margin: 5px;
-            transition: 0.2s;
-        }
-        .upgrade:hover { background-color: #f1fa8c; transform: scale(1.05); }
-        .upgrade:disabled { background-color: #6272a4; color: #a5b0cb; cursor: not-allowed; transform: none; }
 
+        .main-btn:active {
+            transform: scale(0.9) rotate(-10deg);
+            filter: drop-shadow(0 0 50px var(--accent));
+        }
+
+        /* ПРАВАЯ ПАНЕЛЬ: МАГАЗИН И ТОП */
+        .side-panel {
+            width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .shop, .leaderboard {
+            background: var(--panel-bg);
+            border-radius: 20px;
+            border: 2px solid #333;
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        h2 {
+            color: var(--cyan);
+            border-bottom: 2px dashed #444;
+            padding-bottom: 10px;
+            margin-top: 0;
+            text-align: center;
+        }
+
+        /* КНОПКИ УЛУЧШЕНИЙ */
+        .upgrade-btn {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            background: #282a36;
+            border: 2px solid #444;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            color: var(--text);
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: left;
+        }
+
+        .upgrade-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+            transform: translateX(5px);
+        }
+
+        .upgrade-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .upg-info { display: flex; flex-direction: column; }
+        .upg-name { font-weight: bold; font-size: 1.1em; color: var(--gold); }
+        .upg-desc { font-size: 0.85em; color: #aaa; }
+        .upg-price { font-weight: bold; color: var(--accent); font-size: 1.2em; }
+
+        /* ТАБЛИЦА ЛИДЕРОВ */
+        .lb-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #333;
+            font-size: 1.1em;
+        }
+        .lb-row.me {
+            background: rgba(255, 121, 198, 0.2);
+            font-weight: bold;
+            color: var(--accent);
+            border-radius: 5px;
+        }
+        .lb-rank { width: 30px; color: #888; }
+        .lb-name { flex: 1; }
+        .lb-score { font-family: monospace; font-size: 1.2em; color: var(--green); }
+
+        /* ВСПЛЫВАЮЩИЙ ТЕКСТ */
         .floating-text {
             position: absolute;
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
             pointer-events: none;
-            animation: floatUp 1.5s ease-out forwards;
+            animation: floatUp 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
             text-shadow: 2px 2px 0px #000;
-            z-index: 10;
+            z-index: 100;
         }
 
         @keyframes floatUp {
             0% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(-150px) scale(1.5) rotate(15deg); opacity: 0; }
+            100% { transform: translateY(-100px) scale(1.5) rotate(15deg); opacity: 0; }
         }
+
+        /* Настройки скроллбара */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #555; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
     </style>
 </head>
 <body>
 
-    <h1>Симулятор Суетолога 🦊</h1>
-    <div id="score-container">Уровень пушистости: <span id="uwu-count">0</span> UwU</div>
-    
-    <button id="furry-btn">🐾</button>
-
-    <div id="shop">
-        <h3 style="margin-top: 0;">Магазин Приколов</h3>
-        <button class="upgrade" id="upgrade1" onclick="buyAutoUwU()" disabled>
-            Нанять лисичку-помощницу (Цена: <span id="price">15</span> UwU)
-        </button>
-        <p id="auto-stats" style="margin-bottom: 0;">Авто-UwU в секунду: 0</p>
+<div class="container">
+    <div class="game-panel" id="game-panel">
+        <h1>СУЕТОЛОГ: PRO 🦊</h1>
+        <div class="score-box">
+            <span id="uwu-count">0</span> UwU
+        </div>
+        <div class="bps-box">
+            Авто-UwU в сек: <span id="bps-count">0</span>
+        </div>
+        
+        <button class="main-btn" id="main-btn">🐾</button>
+        <button onclick="resetSave()" style="position:absolute; bottom: 10px; left: 10px; background:none; border:none; color:#555; cursor:pointer;">Сбросить прогресс</button>
     </div>
 
-<script>
-    let score = 0;
-    let autoUwU = 0;
-    let price = 15;
-    
-    const scoreEl = document.getElementById('uwu-count');
-    const btn = document.getElementById('furry-btn');
-    const upgrade1Btn = document.getElementById('upgrade1');
-    const autoStatsEl = document.getElementById('auto-stats');
-    const priceEl = document.getElementById('price');
+    <div class="side-panel">
+        <div class="shop">
+            <h2>🛒 Магазин</h2>
+            <div id="shop-container">
+                </div>
+        </div>
 
-    // Набор мемных фраз для всплывающего текста
-    const phrases = ["OwO", "UwU", "*кусь*", "Фыр-фыр!", "Awww~", "*виляет хвостом*", "Суетолог!", "Оу май", "nya~", "🐾"];
-    // Эмодзи для изменения мордочки
+        <div class="leaderboard">
+            <h2>🏆 Топ Суетологов</h2>
+            <div id="lb-container">
+                </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 1. ОСНОВНЫЕ ПЕРЕМЕННЫЕ И СОХРАНЕНИЯ ---
+    let myName = localStorage.getItem('furryName');
+    if (!myName) {
+        myName = prompt("Введи свой никнейм для таблицы лидеров:", "Новый Пушистик") || "Анонимный Лис";
+        localStorage.setItem('furryName', myName);
+    }
+
+    let score = parseFloat(localStorage.getItem('furryScore')) || 0;
+    let autoUwU = parseFloat(localStorage.getItem('furryAuto')) || 0;
+
+    // --- 2. УЛУЧШЕНИЯ (МАГАЗИН) ---
+    const upgrades = [
+        { id: 1, name: "Лисичка-помощница", desc: "+1 UwU/сек", basePrice: 15, bps: 1, count: parseInt(localStorage.getItem('upg_1')) || 0 },
+        { id: 2, name: "Энергетик 'Фыр-Фыр'", desc: "+5 UwU/сек", basePrice: 100, bps: 5, count: parseInt(localStorage.getItem('upg_2')) || 0 },
+        { id: 3, name: "Генератор Мяуканья", desc: "+25 UwU/сек", basePrice: 1000, bps: 25, count: parseInt(localStorage.getItem('upg_3')) || 0 },
+        { id: 4, name: "Кибер-лапка", desc: "+100 UwU/сек", basePrice: 5000, bps: 100, count: parseInt(localStorage.getItem('upg_4')) || 0 }
+    ];
+
+    // --- 3. ИСКУССТВЕННЫЕ СОПЕРНИКИ ДЛЯ ТАБЛИЦЫ ---
+    // Их счет сохраняется, чтобы они не отставали при перезагрузке
+    const defaultBots = [
+        { name: "Альфа_Волк", score: 15000, power: 120 },
+        { name: "OwO_Master", score: 5000, power: 50 },
+        { name: "Хитрый_Енот", score: 1200, power: 15 },
+        { name: "ТоксичныйПёс", score: 500, power: 5 },
+        { name: "Кот_Баюн", score: 150, power: 2 },
+        { name: "ПростоПельмень", score: 50, power: 1 }
+    ];
+
+    let bots = JSON.parse(localStorage.getItem('furryBots'));
+    if (!bots) {
+        bots = defaultBots;
+    }
+
+    // --- 4. ЭЛЕМЕНТЫ ИНТЕРФЕЙСА ---
+    const scoreEl = document.getElementById('uwu-count');
+    const bpsEl = document.getElementById('bps-count');
+    const mainBtn = document.getElementById('main-btn');
+    const shopContainer = document.getElementById('shop-container');
+    const lbContainer = document.getElementById('lb-container');
+    const gamePanel = document.getElementById('game-panel');
+
+    const phrases = ["OwO", "UwU", "*кусь*", "Фыр-фыр!", "Awww~", "*виляет хвостом*", "Мяу!", "Суета!", "nya~", "🐾"];
     const faces = ["🐾", "🦊", "🐺", "🐶", "🐱", "🦁", "🐯", "🦝"];
 
-    // Обработка клика по главной кнопке
-    btn.addEventListener('click', (e) => {
-        score++;
-        updateScore();
-        createFloatingText(e.clientX, e.clientY);
-        changeFace();
-    });
+    // --- 5. ЛОГИКА ИГРЫ ---
 
-    // Обновление счетчика и проверка доступности покупки
-    function updateScore() {
-        scoreEl.innerText = score;
+    function getPrice(upgrade) {
+        // Формула удорожания: базовая цена * 1.15^кол-во
+        return Math.floor(upgrade.basePrice * Math.pow(1.15, upgrade.count));
+    }
+
+    function updateDisplay() {
+        scoreEl.innerText = Math.floor(score).toLocaleString();
+        bpsEl.innerText = autoUwU.toLocaleString();
+        
+        // Обновляем доступность кнопок в магазине
+        upgrades.forEach(upg => {
+            const btn = document.getElementById(`btn-upg-${upg.id}`);
+            const price = getPrice(upg);
+            if (btn) {
+                btn.disabled = score < price;
+                document.getElementById(`price-upg-${upg.id}`).innerText = price.toLocaleString() + " UwU";
+            }
+        });
+    }
+
+    // Рендер магазина
+    function initShop() {
+        shopContainer.innerHTML = '';
+        upgrades.forEach(upg => {
+            const btn = document.createElement('button');
+            btn.className = 'upgrade-btn';
+            btn.id = `btn-upg-${upg.id}`;
+            btn.innerHTML = `
+                <div class="upg-info">
+                    <span class="upg-name">${upg.name} (Куплено: <span id="count-upg-${upg.id}">${upg.count}</span>)</span>
+                    <span class="upg-desc">${upg.desc}</span>
+                </div>
+                <div class="upg-price" id="price-upg-${upg.id}">${getPrice(upg).toLocaleString()} UwU</div>
+            `;
+            btn.onclick = () => buyUpgrade(upg);
+            shopContainer.appendChild(btn);
+        });
+    }
+
+    function buyUpgrade(upg) {
+        const price = getPrice(upg);
         if (score >= price) {
-            upgrade1Btn.disabled = false;
-        } else {
-            upgrade1Btn.disabled = true;
+            score -= price;
+            upg.count++;
+            autoUwU += upg.bps;
+            
+            document.getElementById(`count-upg-${upg.id}`).innerText = upg.count;
+            saveProgress();
+            updateDisplay();
         }
     }
 
-    // Создание отлетающего текста
+    // Рендер таблицы лидеров
+    function updateLeaderboard() {
+        // Добавляем игрока к ботам
+        let allPlayers = [...bots, { name: myName, score: Math.floor(score), isMe: true }];
+        
+        // Сортируем по убыванию очков
+        allPlayers.sort((a, b) => b.score - a.score);
+        
+        // Отрисовываем топ-7
+        lbContainer.innerHTML = '';
+        for (let i = 0; i < Math.min(7, allPlayers.length); i++) {
+            const p = allPlayers[i];
+            const div = document.createElement('div');
+            div.className = `lb-row ${p.isMe ? 'me' : ''}`;
+            div.innerHTML = `
+                <span class="lb-rank">#${i + 1}</span>
+                <span class="lb-name">${p.name}</span>
+                <span class="lb-score">${p.score.toLocaleString()}</span>
+            `;
+            lbContainer.appendChild(div);
+        }
+    }
+
+    // --- 6. ЭФФЕКТЫ ---
+    mainBtn.addEventListener('mousedown', (e) => {
+        score++;
+        updateDisplay();
+        createFloatingText(e.clientX, e.clientY);
+        
+        if (Math.random() > 0.8) {
+            mainBtn.innerText = faces[Math.floor(Math.random() * faces.length)];
+        }
+    });
+
     function createFloatingText(x, y) {
         const el = document.createElement('div');
         el.className = 'floating-text';
         el.innerText = phrases[Math.floor(Math.random() * phrases.length)];
         
-        // Немного разбрасываем текст вокруг курсора
-        const offsetX = (Math.random() - 0.5) * 80;
-        const offsetY = (Math.random() - 0.5) * 80;
-        
+        const offsetX = (Math.random() - 0.5) * 60;
+        const offsetY = (Math.random() - 0.5) * 60;
         el.style.left = (x + offsetX) + 'px';
         el.style.top = (y + offsetY) + 'px';
         
-        // Случайный яркий цвет
-        const colors = ['#ff79c6', '#bd93f9', '#8be9fd', '#50fa7b', '#f1fa8c', '#ffb86c'];
+        const colors = ['#ff79c6', '#8be9fd', '#50fa7b', '#f1fa8c'];
         el.style.color = colors[Math.floor(Math.random() * colors.length)];
 
         document.body.appendChild(el);
-
-        // Удаляем элемент после завершения анимации (1.5 сек)
-        setTimeout(() => {
-            el.remove();
-        }, 1400);
+        setTimeout(() => el.remove(), 1000);
     }
 
-    // С шансом 30% меняем картинку кнопки на случайного зверя
-    function changeFace() {
-        if (Math.random() > 0.7) {
-            btn.innerText = faces[Math.floor(Math.random() * faces.length)];
+    // --- 7. ИГРОВЫЕ ЦИКЛЫ И СОХРАНЕНИЕ ---
+
+    function saveProgress() {
+        localStorage.setItem('furryScore', score);
+        localStorage.setItem('furryAuto', autoUwU);
+        localStorage.setItem('furryBots', JSON.stringify(bots));
+        upgrades.forEach(upg => localStorage.setItem(`upg_${upg.id}`, upg.count));
+    }
+
+    function resetSave() {
+        if(confirm("Точно сбросить весь прогресс?")) {
+            localStorage.clear();
+            location.reload();
         }
     }
 
-    // Покупка автоматического кликера
-    function buyAutoUwU() {
-        if (score >= price) {
-            score -= price;
-            autoUwU += 1;
-            
-            // Увеличиваем цену на 10 каждую покупку, чтобы было интереснее
-            price += 10; 
-            priceEl.innerText = price;
-            
-            updateScore();
-            autoStatsEl.innerText = "Авто-UwU в секунду: " + autoUwU;
-        }
-    }
-
-    // Цикл работы автокликера (вызывается каждую секунду)
+    // Тик автокликера (10 раз в секунду для плавности)
     setInterval(() => {
         if (autoUwU > 0) {
-            score += autoUwU;
-            updateScore();
-            
-            // Создаем всплывающий текст от автокликов прямо из центра кнопки
-            const rect = btn.getBoundingClientRect();
-            const cx = rect.left + rect.width / 2;
-            const cy = rect.top + rect.height / 2;
-            
-            // Если автокликов много, не будем спамить текстом слишком сильно
-            if(Math.random() > 0.4) {
-                createFloatingText(cx, cy);
-            }
+            score += autoUwU / 10;
+            updateDisplay();
         }
+    }, 100);
+
+    // Тик ботов и обновление таблицы (раз в секунду)
+    setInterval(() => {
+        bots.forEach(bot => {
+            // Боты тоже "кликают" и зарабатывают очки
+            bot.score += Math.floor(Math.random() * bot.power);
+        });
+        updateLeaderboard();
+        saveProgress(); // Сохраняем прогресс каждую секунду
     }, 1000);
 
-    // Начальная проверка
-    updateScore();
+    // Запуск
+    initShop();
+    updateDisplay();
+    updateLeaderboard();
+
 </script>
 </body>
 </html>
