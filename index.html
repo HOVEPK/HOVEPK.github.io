@@ -2,558 +2,451 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UwU Clicker: Aurora Nova</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>UwU Clicker: Mobile & PC</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        /* --- CORE STYLES --- */
         :root {
-            --bg-color: #0b0b0f;
-            --primary-color: #ff79c6; /* Неоново-розовый */
-            --secondary-color: #bd93f9; /* Фиолетовый */
-            --accent-color: #50fa7b; /* Неоново-зеленый */
-            --text-color: #f8f8f2;
-            --text-muted: #abb1b8;
-            --glass-bg: rgba(30, 30, 40, 0.4);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --glass-blur: 20px;
-            --shadow-color: rgba(0, 0, 0, 0.5);
-            --glow-color: rgba(255, 121, 198, 0.5);
-            --font-family: 'Poppins', 'Segoe UI', sans-serif;
+            --bg-dark: #121218;
+            --pink: #ff79c6;
+            --purple: #bd93f9;
+            --green: #50fa7b;
+            --text: #f8f8f2;
+            --panel-bg: rgba(30, 30, 42, 0.6);
+            --panel-border: rgba(255, 255, 255, 0.1);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; /* Убираем синее выделение при тапе на телефоне */
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: var(--font-family);
-            height: 100vh;
-            overflow: hidden;
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text);
+            /* Градиентный фон */
+            background-image: radial-gradient(circle at top left, #2a1a3a, var(--bg-dark)),
+                              radial-gradient(circle at bottom right, #3a1c2a, var(--bg-dark));
+            background-attachment: fixed;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
         }
 
-        /* --- BACKGROUND --- */
-        .background-gradient {
-            position: fixed;
-            top: 0;
-            left: 0;
+        .container {
             width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 10% 10%, rgba(189, 147, 249, 0.1) 0%, rgba(0,0,0,0) 40%),
-                radial-gradient(circle at 90% 90%, rgba(255, 121, 198, 0.1) 0%, rgba(0,0,0,0) 40%),
-                var(--bg-color);
-            z-index: -1;
-        }
-
-        /* --- APP CONTAINER --- */
-        .app-container {
-            width: 95%;
-            height: 90vh;
-            display: grid;
-            grid-template-areas:
-                "header header header"
-                "main main sidebar";
-            grid-template-rows: 80px 1fr;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-            max-width: 1400px;
-        }
-
-        /* --- GLASS EFFECT --- */
-        .glass {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            backdrop-filter: blur(var(--glass-blur));
-            -webkit-backdrop-filter: blur(var(--glass-blur));
-            box-shadow: 0 10px 40px 0 var(--shadow-color);
+            max-width: 1200px;
             padding: 20px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .glass:hover {
-            box-shadow: 0 15px 50px 0 var(--shadow-color);
-        }
-
-        /* --- HEADER --- */
-        .app-header {
-            grid-area: header;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 30px;
-        }
-
-        .app-header h1 {
-            font-size: 2rem;
-            color: var(--primary-color);
-            text-shadow: 0 0 15px var(--glow-color);
-            font-weight: 700;
-        }
-
-        .level-indicator {
-            font-size: 1.1rem;
-            color: white;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            padding: 8px 20px;
-            border-radius: 12px;
-            font-weight: bold;
-            box-shadow: 0 0 15px var(--shadow-color);
-        }
-
-        /* --- MAIN AREA --- */
-        .game-area {
-            grid-area: main;
             display: grid;
-            grid-template-rows: 1fr auto;
+            grid-template-columns: 1.5fr 1fr;
             gap: 20px;
+            align-items: start;
         }
 
-        .clicker-section {
+        /* Глассморфизм для панелей */
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- ЛЕВАЯ ЧАСТЬ (ИГРА) --- */
+        .game-section {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             text-align: center;
-            position: relative;
+            gap: 20px;
         }
 
-        .counter-container {
-            margin-bottom: 30px;
+        .header h1 {
+            color: var(--pink);
+            font-size: 2.5rem;
+            text-shadow: 0 0 15px rgba(255, 121, 198, 0.5);
+        }
+        .level-badge {
+            display: inline-block;
+            background: linear-gradient(45deg, var(--purple), var(--pink));
+            padding: 5px 15px;
+            border-radius: 12px;
+            font-weight: bold;
+            margin-top: 5px;
         }
 
+        .score-display {
+            margin: 20px 0;
+        }
         #score {
             font-size: 4rem;
-            font-weight: bold;
-            color: var(--accent-color);
-            text-shadow: 0 0 20px rgba(80, 250, 123, 0.5);
-            display: block;
+            font-weight: 900;
+            color: var(--green);
+            line-height: 1;
+            text-shadow: 0 0 20px rgba(80, 250, 123, 0.4);
         }
-
-        .counter-container .label {
-            font-size: 1rem;
-            color: var(--text-muted);
-            margin-top: -5px;
-            display: block;
-        }
-
         #bps {
-            font-size: 1.3rem;
-            color: var(--secondary-color);
-            font-weight: 600;
+            font-size: 1.2rem;
+            color: var(--purple);
+            font-weight: 700;
         }
 
-        .click-target {
-            cursor: pointer;
-            transition: transform 0.05s ease;
-            position: relative;
-        }
-
-        .click-target:active {
-            transform: scale(0.92);
-        }
-
-        .click-shape {
-            position: relative;
-            width: 250px;
-            height: 250px;
-            background: linear-gradient(135deg, #bd93f9 0%, #ff79c6 100%);
+        /* Кнопка клика */
+        .clicker-btn {
+            width: 220px;
+            height: 220px;
+            background: linear-gradient(135deg, var(--purple), var(--pink));
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 10px 40px var(--shadow-color), inset 0 0 20px rgba(255, 255, 255, 0.3);
-            overflow: hidden;
-        }
-
-        .click-shape::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
-        }
-
-        .main-emoji {
-            font-size: 9rem;
-            z-index: 1;
-            filter: drop-shadow(0 0 15px rgba(0,0,0,0.5));
-        }
-
-        .reset-data {
-            font-size: 0.8rem;
-            color: #555;
+            font-size: 7rem;
             cursor: pointer;
-            margin-top: 15px;
+            user-select: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.2);
+            transition: transform 0.05s;
+            touch-action: manipulation; /* Запрещает двойной тап для зума */
         }
-        .reset-data:hover { color: #888; }
-
-        /* Stats */
-        .stats-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            padding: 15px;
+        .clicker-btn:active {
+            transform: scale(0.9);
         }
 
-        .stat-item {
-            text-align: left;
-            padding: 10px;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.02);
-        }
-
-        .stat-item h2 { font-size: 1rem; color: var(--text-color); margin-bottom: 5px; }
-        .stat-item p { font-size: 1.1rem; color: var(--accent-color); font-weight: bold;}
-
-        /* --- SIDEBAR --- */
-        .sidebar-area {
-            grid-area: sidebar;
-            display: grid;
-            grid-template-rows: 1fr 1fr;
-            gap: 20px;
-            overflow: hidden;
-        }
-
-        .sidebar-section h2 {
-            color: var(--text-color);
-            font-size: 1.3rem;
-            margin-bottom: 15px;
-            font-weight: 600;
-            border-bottom: 2px solid var(--glass-border);
-            padding-bottom: 5px;
-        }
-
-        /* Upgrades */
-        .upgrades-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            overflow-y: auto;
-            padding-right: 5px;
-            height: calc(100% - 40px);
-        }
-
-        .upgrade-item {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 12px;
-            display: grid;
-            grid-template-areas:
-                "icon name name"
-                "icon desc bonus"
-                "icon cost cost";
-            grid-template-columns: 60px 1fr auto;
-            gap: 5px 10px;
-            transition: all 0.2s ease;
-        }
-
-        .upgrade-item:hover {
-            border-color: rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .upgrade-item .upgrade-icon { grid-area: icon; font-size: 3rem; display: flex; align-items: center; justify-content: center; }
-        .upgrade-item .upgrade-name { grid-area: name; font-size: 1rem; color: var(--text-color); font-weight: 600; }
-        .upgrade-item .upgrade-desc { grid-area: desc; font-size: 0.8rem; color: var(--text-muted); }
-        .upgrade-item .upgrade-cost { grid-area: cost; font-size: 0.9rem; color: var(--accent-color); font-weight: bold; }
-        .upgrade-item .upgrade-level { font-size: 0.8rem; color: #fff; background: var(--secondary-color); padding: 2px 6px; border-radius: 6px;}
-
-        .upgrade-item button {
-            background-color: var(--primary-color);
+        .reset-btn {
+            background: none;
             border: none;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 8px;
+            color: rgba(255,255,255,0.3);
             cursor: pointer;
-            font-weight: bold;
             font-size: 0.9rem;
-            transition: all 0.2s ease;
+            text-decoration: underline;
+            margin-top: 10px;
         }
 
-        .upgrade-item button:hover:not(:disabled) { background-color: #ff8ad0; }
-        .upgrade-item button:active:not(:disabled) { transform: scale(0.95); }
-
-        .upgrade-item button:disabled {
-            background-color: #6272a4;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-
-        /* Leaderboard */
-        .leaderboard-table {
+        /* --- ПРАВАЯ ЧАСТЬ (МАГАЗИН И ТОП) --- */
+        .sidebar {
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            overflow-y: auto;
-            height: calc(100% - 40px);
-            padding-right: 5px;
+            gap: 20px;
         }
 
-        .leaderboard-row {
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 8px;
-            padding: 6px 12px;
-            display: grid;
-            grid-template-columns: 25px 35px 1fr auto;
+        .sidebar h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--panel-border);
+            padding-bottom: 10px;
+        }
+
+        /* Магазин */
+        .upgrade-item {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
             align-items: center;
+            gap: 15px;
+        }
+        .upgrade-icon { font-size: 2.5rem; }
+        .upgrade-info { flex: 1; }
+        .upgrade-name { font-weight: bold; font-size: 1.1rem; }
+        .upgrade-desc { font-size: 0.85rem; color: #aaa; }
+        
+        .buy-btn {
+            background: var(--pink);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 80px;
+        }
+        .buy-btn:disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
+        }
+        .buy-btn .cost { font-size: 0.9rem; }
+        .buy-btn .lvl { font-size: 0.7rem; opacity: 0.8; }
+
+        /* Таблица лидеров */
+        .lb-row {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
             gap: 10px;
-            transition: all 0.3s ease;
         }
-
-        .leaderboard-row.me {
-            background: rgba(255, 121, 198, 0.15);
-            border: 1px solid var(--primary-color);
-            box-shadow: 0 0 10px rgba(255, 121, 198, 0.2);
+        .lb-row:last-child { border-bottom: none; }
+        .lb-row.me {
+            background: rgba(255, 121, 198, 0.2);
+            border-radius: 8px;
+            font-weight: bold;
         }
+        .lb-rank { width: 20px; color: #888; text-align: center;}
+        .lb-name { flex: 1; }
+        .lb-score { color: var(--green); font-family: monospace; font-size: 1.1rem; }
 
-        .leaderboard-rank { width: 20px; color: var(--text-muted); font-size: 0.9rem; }
-        .leaderboard-icon { font-size: 1.8rem; }
-        .leaderboard-name { flex: 1; color: var(--text-color); font-size: 0.95rem; font-weight: 500;}
-        .leaderboard-score { color: var(--accent-color); font-weight: 600; font-size: 1rem;}
-
-        /* Particles */
-        .uwu-particle {
+        /* Всплывающие частицы */
+        .particle {
             position: fixed;
             pointer-events: none;
-            font-family: var(--font-family);
             font-weight: bold;
-            color: var(--primary-color);
-            animation: particleUp 1s ease-out forwards;
-            z-index: 100;
-            user-select: none;
+            color: var(--pink);
+            font-size: 1.5rem;
+            animation: floatUp 0.8s ease-out forwards;
+            z-index: 9999;
         }
-
-        @keyframes particleUp {
+        @keyframes floatUp {
             0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            100% { transform: translate(-50%, -150px) scale(1.5) rotate(15deg); opacity: 0; }
+            100% { transform: translate(-50%, -100px) scale(1.5); opacity: 0; }
         }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 3px;}
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px;}
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-
+        /* --- АДАПТИВНОСТЬ ДЛЯ ТЕЛЕФОНОВ --- */
+        @media (max-width: 850px) {
+            .container {
+                grid-template-columns: 1fr; /* В одну колонку */
+                padding: 10px;
+            }
+            .header h1 { font-size: 2rem; }
+            .clicker-btn { width: 180px; height: 180px; font-size: 5rem; }
+            #score { font-size: 3rem; }
+            .sidebar { padding-bottom: 30px; } /* Место для прокрутки вниз */
+        }
     </style>
 </head>
 <body>
-    <div class="background-gradient"></div>
-    <div class="app-container">
-        <header class="app-header glass">
+
+<div class="container">
+    <div class="glass-panel game-section">
+        <div class="header">
             <h1>Aurora Nova</h1>
-            <div class="level-indicator">ЛВЛ: <span id="player-level">1</span></div>
-        </header>
-        
-        <main class="game-area">
-            <section class="clicker-section glass">
-                <div class="counter-container">
-                    <span id="score">0</span>
-                    <span class="label">UwU добыто</span>
-                    <span id="bps">0 UwU/сек</span>
-                </div>
-                <div class="click-target" id="click-target">
-                    <div class="click-shape">
-                        <span class="main-emoji">🐾</span>
-                    </div>
-                </div>
-                <div class="reset-data" onclick="resetGame()">[Сброс]</div>
-            </section>
-            
-            <section class="stats-section glass">
-                <div class="stat-item">
-                    <h2>Время в игре:</h2>
-                    <p id="play-time">00:00:00</p>
-                </div>
-                <div class="stat-item">
-                    <h2>Всего кликов:</h2>
-                    <p id="total-clicks">0</p>
-                </div>
-            </section>
-        </main>
-        
-        <aside class="sidebar-area">
-            <section class="sidebar-section glass">
-                <h2>Магазин</h2>
-                <div class="upgrades-list" id="upgrades-list">
-                    </div>
-            </section>
-            
-            <section class="sidebar-section glass">
-                <h2>Топ Суетологов</h2>
-                <div class="leaderboard-table" id="leaderboard-table">
-                    </div>
-            </section>
-        </aside>
+            <div class="level-badge">Уровень: <span id="lvl-display">1</span></div>
+        </div>
+
+        <div class="score-display">
+            <div id="score">0</div>
+            <div>UwU собрано</div>
+            <div id="bps">0 UwU / сек</div>
+        </div>
+
+        <div class="clicker-btn" id="main-btn">🐾</div>
+
+        <button class="reset-btn" onclick="hardReset()">Сбросить прогресс</button>
     </div>
 
-    <script>
-        // --- 1. CONFIGURATION & CONSTANTS ---
-        const CLICK_TARGET = document.getElementById('click-target');
-        const SCORE_EL = document.getElementById('score');
-        const BPS_EL = document.getElementById('bps');
-        const PLAYER_LEVEL_EL = document.getElementById('player-level');
-        const TOTAL_CLICKS_EL = document.getElementById('total-clicks');
-        const PLAY_TIME_EL = document.getElementById('play-time');
-        const UPGRADES_LIST_EL = document.getElementById('upgrades-list');
-        const LEADERBOARD_TABLE_EL = document.getElementById('leaderboard-table');
+    <div class="sidebar">
+        <div class="glass-panel">
+            <h2>🛒 Магазин</h2>
+            <div id="shop-container"></div>
+        </div>
 
-        // Initial Game State (if no save)
-        const initialState = {
-            score: 0,
-            bps: 0,
-            totalClicks: 0,
-            playerLevel: 1,
-            upgrades: [
-                { id: '1', name: 'Сильные Лапки', desc: '+1 UwU/сек', baseCost: 15, costMultiplier: 1.15, bonusBps: 1, icon: '🐾', level: 0 },
-                { id: '2', name: 'Лисичка-Хелпер', desc: '+10 UwU/сек', baseCost: 150, costMultiplier: 1.2, bonusBps: 10, icon: '🦊', level: 0 },
-                { id: '3', name: 'Мяу-Фабрика', desc: '+100 UwU/сек', baseCost: 1500, costMultiplier: 1.25, bonusBps: 100, icon: '🏭', level: 0 },
-                { id: '4', name: 'Кибер-Лапа', desc: '+1000 UwU/сек', baseCost: 20000, costMultiplier: 1.3, bonusBps: 1000, icon: '🤖', level: 0 }
-            ],
-            leaderboard: [
-                { name: "Альфа Волк", score: 10000000, icon: '🐺', basePower: 5000 },
-                { name: "ОуО Мастер", score: 5000000, icon: '🦊', basePower: 2500 },
-                { name: "Хитрый Енот", score: 1000000, icon: '🦝', basePower: 1000 },
-                { name: "Кот Баюн", score: 250000, icon: '🐱', basePower: 500 },
-                { name: "Просто Пельмень", score: 50000, icon: '🥟', basePower: 100 },
-                { name: "Твой Прогресс", score: 0, icon: '👤', isMe: true }
-            ],
-            lastSaveTime: Date.now(),
-            startTime: Date.now()
-        };
+        <div class="glass-panel">
+            <h2>🏆 Топ Суетологов</h2>
+            <div id="lb-container"></div>
+        </div>
+    </div>
+</div>
 
-        let gameState = { ...initialState };
+<script>
+    // 1. НАСТРОЙКИ И СОХРАНЕНИЯ
+    const btn = document.getElementById('main-btn');
+    const scoreEl = document.getElementById('score');
+    const bpsEl = document.getElementById('bps');
+    const lvlEl = document.getElementById('lvl-display');
+    const shopContainer = document.getElementById('shop-container');
+    const lbContainer = document.getElementById('lb-container');
 
-        // --- 2. GAME LOGIC ---
+    // Базовые данные игры
+    let state = {
+        score: 0,
+        bps: 0,
+        level: 1,
+        upgrades: [
+            { id: 1, icon: '🦊', name: 'Лисичка', desc: '+1 UwU/сек', basePrice: 15, bps: 1, count: 0 },
+            { id: 2, icon: '⚡', name: 'Энергетик', desc: '+10 UwU/сек', basePrice: 150, bps: 10, count: 0 },
+            { id: 3, icon: '🏭', name: 'Завод Суеты', desc: '+100 UwU/сек', basePrice: 1500, bps: 100, count: 0 },
+            { id: 4, icon: '🤖', name: 'Кибер-Лапа', desc: '+1000 UwU/сек', basePrice: 20000, bps: 1000, count: 0 }
+        ],
+        bots: [
+            { name: "Альфа Волк", score: 50000, power: 100 },
+            { name: "ОуО Мастер", score: 10000, power: 25 },
+            { name: "Енот-Вор", score: 2000, power: 10 },
+            { name: "Ленивый Кот", score: 500, power: 2 }
+        ],
+        lastSave: Date.now()
+    };
 
-        function gameTick() {
-            // Auto Income (bps / 10 because tick is 100ms)
-            gameState.score += gameState.bps / 10;
-            
-            // Bot Income simulation (bots get a small random bump every second)
-            if (Date.now() - gameState.lastSaveTime > 1000) {
-                gameState.leaderboard.forEach(p => {
-                    if (!p.isMe) {
-                        p.score += p.basePower + Math.floor(Math.random() * p.basePower);
-                    }
-                });
-                renderLeaderboard();
+    // Загрузка сохранений
+    function loadGame() {
+        try {
+            const saved = localStorage.getItem('uwuMobileSave');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                state.score = parsed.score || 0;
+                state.bps = parsed.bps || 0;
+                // Восстанавливаем покупки
+                if (parsed.upgrades) state.upgrades = parsed.upgrades;
+                if (parsed.bots) state.bots = parsed.bots;
             }
-
-            // Time in game
-            const playTimeSeconds = Math.floor((Date.now() - gameState.startTime) / 1000);
-            PLAY_TIME_EL.innerText = formatTime(playTimeSeconds);
-
-            // Leveling (simple logarithmic scale)
-            gameState.playerLevel = Math.floor(Math.log10(gameState.score + 1)) + 1;
-            PLAYER_LEVEL_EL.innerText = gameState.playerLevel;
-
-            // Save Progress (every 5 seconds)
-            if (Date.now() - gameState.lastSaveTime > 5000) {
-                saveGame();
-                gameState.lastSaveTime = Date.now();
-            }
-
-            updateInterface();
+        } catch (e) {
+            console.error("Ошибка загрузки", e);
         }
+        updateUI();
+        renderShop();
+    }
 
-        // --- 3. UI FUNCTIONS ---
+    function saveGame() {
+        try {
+            localStorage.setItem('uwuMobileSave', JSON.stringify(state));
+        } catch (e) {}
+    }
 
-        function updateInterface() {
-            SCORE_EL.innerText = Math.floor(gameState.score).toLocaleString();
-            BPS_EL.innerText = gameState.bps.toLocaleString() + ' UwU/сек';
-            TOTAL_CLICKS_EL.innerText = gameState.totalClicks;
-            
-            updateShopButtons();
+    function hardReset() {
+        if(confirm("Точно сбросить весь прогресс?")) {
+            localStorage.removeItem('uwuMobileSave');
+            location.reload();
         }
+    }
 
-        function renderUpgrades() {
-            UPGRADES_LIST_EL.innerHTML = '';
-            gameState.upgrades.forEach(upgrade => {
-                const upgradeEl = document.createElement('div');
-                upgradeEl.className = 'upgrade-item glass';
-                upgradeEl.innerHTML = `
-                    <div class="upgrade-icon">${upgrade.icon}</div>
-                    <div class="upgrade-name">${upgrade.name}</div>
-                    <div class="upgrade-desc">${upgrade.desc}</div>
-                    <div class="upgrade-cost">${Math.floor(getCurrentUpgradeCost(upgrade)).toLocaleString()} UwU</div>
-                    <div class="bonus-buy" style="display:flex; justify-content:space-between; align-items:center;">
-                        <span class="upgrade-level">ЛВЛ: ${upgrade.level}</span>
-                        <button onclick="buyUpgrade('${upgrade.id}')" ${gameState.score < getCurrentUpgradeCost(upgrade) ? 'disabled' : ''}>Купить</button>
+    // 2. ИГРОВАЯ ЛОГИКА
+    function getPrice(upg) {
+        return Math.floor(upg.basePrice * Math.pow(1.15, upg.count));
+    }
+
+    function buy(id) {
+        const upg = state.upgrades.find(u => u.id === id);
+        const price = getPrice(upg);
+        
+        if (state.score >= price) {
+            state.score -= price;
+            upg.count++;
+            state.bps += upg.bps;
+            saveGame();
+            updateUI();
+            renderShop(); // Обновляем цены
+        }
+    }
+
+    // 3. ОТРИСОВКА ИНТЕРФЕЙСА
+    function updateUI() {
+        // Округляем счет для красоты
+        scoreEl.innerText = Math.floor(state.score).toLocaleString();
+        bpsEl.innerText = state.bps.toLocaleString() + " UwU / сек";
+        
+        // Уровень зависит от очков
+        state.level = Math.max(1, Math.floor(Math.log10(state.score + 1)) + 1);
+        lvlEl.innerText = state.level;
+
+        // Включаем/выключаем кнопки в магазине
+        state.upgrades.forEach(upg => {
+            const btn = document.getElementById(`buy-btn-${upg.id}`);
+            if (btn) btn.disabled = state.score < getPrice(upg);
+        });
+    }
+
+    function renderShop() {
+        shopContainer.innerHTML = '';
+        state.upgrades.forEach(upg => {
+            const price = getPrice(upg);
+            shopContainer.innerHTML += `
+                <div class="upgrade-item">
+                    <div class="upgrade-icon">${upg.icon}</div>
+                    <div class="upgrade-info">
+                        <div class="upgrade-name">${upg.name}</div>
+                        <div class="upgrade-desc">${upg.desc}</div>
                     </div>
-                `;
-                UPGRADES_LIST_EL.appendChild(upgradeEl);
-            });
+                    <button id="buy-btn-${upg.id}" class="buy-btn" onclick="buy(${upg.id})" ${state.score < price ? 'disabled' : ''}>
+                        <span class="cost">${price.toLocaleString()}</span>
+                        <span class="lvl">ЛВЛ ${upg.count}</span>
+                    </button>
+                </div>
+            `;
+        });
+    }
+
+    function renderLeaderboard() {
+        // Собираем всех (игрока и ботов) в один массив
+        let allPlayers = [
+            ...state.bots, 
+            { name: "Ты (Игрок)", score: state.score, isMe: true }
+        ];
+        
+        // Сортируем по убыванию
+        allPlayers.sort((a, b) => b.score - a.score);
+        
+        lbContainer.innerHTML = '';
+        allPlayers.slice(0, 5).forEach((p, index) => {
+            lbContainer.innerHTML += `
+                <div class="lb-row ${p.isMe ? 'me' : ''}">
+                    <div class="lb-rank">#${index + 1}</div>
+                    <div class="lb-name">${p.name}</div>
+                    <div class="lb-score">${Math.floor(p.score).toLocaleString()}</div>
+                </div>
+            `;
+        });
+    }
+
+    // 4. ЭФФЕКТЫ
+    function spawnParticle(x, y) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const phrases = ["UwU", "🐾", "Фыр!", "OwO"];
+        p.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+        
+        // Немного рандома в координаты
+        p.style.left = (x + (Math.random() - 0.5) * 40) + 'px';
+        p.style.top = (y + (Math.random() - 0.5) * 40) + 'px';
+        
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 800);
+    }
+
+    // Pointerdown идеально работает и для мышки на ПК, и для пальца на телефоне (без задержки)
+    btn.addEventListener('pointerdown', (e) => {
+        state.score++;
+        updateUI();
+        spawnParticle(e.clientX, e.clientY);
+        
+        // Меняем мордочку иногда
+        if (Math.random() > 0.8) {
+            const faces = ["🐾", "🦊", "🐺", "🐶", "🐱"];
+            btn.innerText = faces[Math.floor(Math.random() * faces.length)];
         }
+    });
 
-        function updateShopButtons() {
-            gameState.upgrades.forEach(upgrade => {
-                const upgradeCost = getCurrentUpgradeCost(upgrade);
-                const button = UPGRADES_LIST_EL.querySelector(`button[onclick="buyUpgrade('${upgrade.id}')"]`);
-                if (button) {
-                    button.disabled = gameState.score < upgradeCost;
-                }
-            });
+    // 5. ИГРОВЫЕ ЦИКЛЫ
+    
+    // Автокликер (10 раз в секунду для плавности счета)
+    setInterval(() => {
+        if (state.bps > 0) {
+            state.score += state.bps / 10;
+            updateUI();
         }
+    }, 100);
 
-        function renderLeaderboard() {
-            LEADERBOARD_TABLE_EL.innerHTML = '';
-            
-            // Update player score in leaderboard data
-            const myRankIndex = gameState.leaderboard.findIndex(p => p.isMe);
-            if (myRankIndex !== -1) {
-                gameState.leaderboard[myRankIndex].score = Math.floor(gameState.score);
-            }
-            
-            // Sort leaderboard by score (desc)
-            gameState.leaderboard.sort((a, b) => b.score - a.score);
+    // Боты, таблица лидеров и сохранение (раз в секунду)
+    setInterval(() => {
+        state.bots.forEach(b => {
+            b.score += b.power + Math.random() * (b.power / 2);
+        });
+        renderLeaderboard();
+        saveGame();
+    }, 1000);
 
-            // Render rows
-            gameState.leaderboard.forEach((player, index) => {
-                const rowEl = document.createElement('div');
-                rowEl.className = `leaderboard-row glass ${player.isMe ? 'me' : ''}`;
-                rowEl.innerHTML = `
-                    <span class="leaderboard-rank">${index + 1}</span>
-                    <span class="leaderboard-icon">${player.icon}</span>
-                    <span class="leaderboard-name">${player.name}</span>
-                    <span class="leaderboard-score">${Math.floor(player.score).toLocaleString()}</span>
-                `;
-                LEADERBOARD_TABLE_EL.appendChild(rowEl);
-            });
-        }
+    // ЗАПУСК
+    loadGame();
+    renderLeaderboard();
 
-        // --- 4. PLAYER INTERACTIONS ---
-
-        function buyUpgrade(upgradeId) {
-            const upgradeIndex = gameState.upgrades.findIndex(u => u.id === upgradeId);
-            if (upgradeIndex === -1) return;
-
-            const upgrade = gameState.upgrades[upgradeIndex];
-            const cost = getCurrentUpgradeCost(upgrade);
-
-            if (gameState.score >= cost) {
-                gameState.score -= cost;
-                upgrade.level += 1;
-                gameState.bps += upgrade.bonusBps;
-                
-                renderUpgrades();
-                saveGame();
-                updateInterface();
-            }
-        }
-
-        // --- 5. HELPERS ---
-
-        function getCurrentUpgradeCost(upgrade) {
-            return
+</script>
+</body>
+</html>
