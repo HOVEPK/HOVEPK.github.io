@@ -3,37 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aurora Nova: Global Edition</title>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>Aurora Nova: Bulletproof Edition</title>
     <style>
-        :root {
-            --bg-dark: #0f0c29;
-            --pink: #ff79c6;
-            --purple: #bd93f9;
-            --green: #50fa7b;
-            --text: #f8f8f2;
-            --panel-bg: rgba(20, 20, 35, 0.6);
-            --panel-border: rgba(255, 255, 255, 0.1);
-        }
-
+        /* === БАЗОВЫЕ НАСТРОЙКИ === */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
         }
 
         body {
-            font-family: 'Nunito', sans-serif;
-            color: var(--text);
-            /* Анимированный градиентный фон */
+            background-color: #0f0c29;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
             background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a1a2e);
             background-size: 400% 400%;
             animation: gradientBG 15s ease infinite;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            overflow-x: hidden;
+            touch-action: manipulation; /* Запрет зума на телефоне */
         }
 
         @keyframes gradientBG {
@@ -42,516 +31,460 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* Фоновые летающие частицы */
-        .bg-bubble {
-            position: fixed;
-            border-radius: 50%;
-            background: rgba(255, 121, 198, 0.1);
-            animation: floatBubble infinite ease-in-out;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        @keyframes floatBubble {
-            0% { transform: translateY(100vh) scale(0); opacity: 0; }
-            50% { opacity: 1; }
-            100% { transform: translateY(-20vh) scale(1.5); opacity: 0; }
-        }
-
-        /* Переключатель языков */
-        .lang-switcher {
-            position: absolute;
-            top: 15px;
-            right: 15px;
+        /* === ИНТЕРФЕЙС === */
+        .top-bar {
             display: flex;
-            gap: 8px;
-            z-index: 100;
+            justify-content: flex-end;
+            padding: 15px;
+            gap: 10px;
         }
 
         .lang-btn {
             background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
-            padding: 6px 12px;
+            padding: 8px 15px;
             border-radius: 20px;
             cursor: pointer;
             font-weight: bold;
-            transition: 0.3s;
-            backdrop-filter: blur(5px);
+            transition: 0.2s;
         }
 
         .lang-btn.active {
-            background: var(--pink);
-            box-shadow: 0 0 15px var(--pink);
-            border-color: var(--pink);
+            background: #ff79c6;
+            border-color: #ff79c6;
+            box-shadow: 0 0 10px #ff79c6;
         }
 
-        .container {
-            width: 100%;
+        .main-container {
+            display: flex;
+            flex-wrap: wrap;
             max-width: 1200px;
-            padding: 60px 20px 20px 20px;
-            display: grid;
-            grid-template-columns: 1.5fr 1fr;
+            margin: 0 auto;
+            padding: 10px;
             gap: 20px;
-            align-items: start;
-            z-index: 10;
         }
 
-        /* Глассморфизм */
-        .glass-panel {
-            background: var(--panel-bg);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid var(--panel-border);
-            border-radius: 24px;
-            padding: 25px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            transition: transform 0.3s;
+        .panel {
+            background: rgba(20, 20, 35, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            flex: 1 1 300px; /* Адаптивность: панели сжимаются и переносятся */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        
-        .glass-panel:hover { transform: translateY(-2px); }
 
-        /* --- ЛЕВАЯ ЧАСТЬ --- */
-        .game-section {
+        /* === ЛЕВАЯ ПАНЕЛЬ (ИГРА) === */
+        .game-panel {
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
-            gap: 20px;
-            position: relative;
+            min-width: 300px;
         }
 
-        .header h1 {
-            color: var(--pink);
-            font-size: 2.5rem;
-            text-shadow: 0 0 15px rgba(255, 121, 198, 0.5);
-            animation: pulseText 2s infinite;
+        h1 {
+            color: #ff79c6;
+            font-size: 2.2rem;
+            text-shadow: 0 0 10px rgba(255, 121, 198, 0.6);
+            margin-bottom: 5px;
         }
 
-        @keyframes pulseText {
-            0%, 100% { text-shadow: 0 0 15px rgba(255, 121, 198, 0.5); }
-            50% { text-shadow: 0 0 25px rgba(255, 121, 198, 0.9), 0 0 5px white; }
-        }
-
-        .level-badge {
-            display: inline-block;
-            background: linear-gradient(45deg, var(--purple), var(--pink));
+        .level-box {
+            background: linear-gradient(90deg, #bd93f9, #ff79c6);
             padding: 5px 15px;
-            border-radius: 12px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .score-box {
+            margin-bottom: 30px;
+        }
+
+        #score {
+            font-size: 4rem;
+            font-weight: 900;
+            color: #50fa7b;
+            line-height: 1;
+            text-shadow: 0 0 15px rgba(80, 250, 123, 0.4);
+        }
+
+        #bps {
+            color: #bd93f9;
+            font-size: 1.2rem;
             font-weight: bold;
             margin-top: 5px;
-            box-shadow: 0 4px 15px rgba(189, 147, 249, 0.4);
         }
 
-        .score-display { margin: 20px 0; }
-        #score {
-            font-size: 4.5rem;
-            font-weight: 900;
-            color: var(--green);
-            line-height: 1;
-            text-shadow: 0 0 20px rgba(80, 250, 123, 0.5);
-            transition: 0.1s;
-        }
-        
-        #bps { font-size: 1.2rem; color: var(--purple); font-weight: 700; margin-top: 5px; }
-        .text-muted { color: #aaa; font-size: 0.9rem; }
-
-        /* Анимированная кнопка клика */
-        .click-wrapper {
-            position: relative;
-            width: 240px;
-            height: 240px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        /* Пульсирующее кольцо сзади */
-        .click-halo {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: linear-gradient(45deg, var(--pink), var(--purple));
-            opacity: 0.5;
-            filter: blur(20px);
-            animation: pulseHalo 3s infinite;
-        }
-
-        @keyframes pulseHalo {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.15); opacity: 0.8; }
-        }
-
-        .clicker-btn {
-            position: relative;
+        .main-btn {
             width: 200px;
             height: 200px;
-            background: linear-gradient(135deg, rgba(189,147,249,0.9), rgba(255,121,198,0.9));
             border-radius: 50%;
+            background: radial-gradient(circle, #ff79c6, #bd93f9);
+            border: none;
+            font-size: 6rem;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 6.5rem;
             cursor: pointer;
             user-select: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.4);
-            transition: transform 0.05s, filter 0.1s;
-            touch-action: manipulation;
-            z-index: 2;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.4);
+            transition: transform 0.05s;
+            position: relative;
         }
 
-        .clicker-btn:active {
-            transform: scale(0.85);
-            filter: brightness(1.2);
+        .main-btn:active {
+            transform: scale(0.9);
         }
 
         .reset-btn {
-            background: none;
+            background: transparent;
             border: none;
-            color: rgba(255,255,255,0.4);
-            cursor: pointer;
-            font-size: 0.9rem;
+            color: #888;
             text-decoration: underline;
-            margin-top: 15px;
-            transition: 0.2s;
-        }
-        .reset-btn:hover { color: var(--pink); }
-
-        /* --- ПРАВАЯ ЧАСТЬ --- */
-        .sidebar { display: flex; flex-direction: column; gap: 20px; }
-        .sidebar h2 { font-size: 1.5rem; margin-bottom: 15px; border-bottom: 2px solid var(--panel-border); padding-bottom: 10px; }
-
-        /* Магазин */
-        .upgrade-item {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid var(--panel-border);
-            border-radius: 16px;
-            padding: 12px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            transition: 0.2s;
-            position: relative;
-            overflow: hidden;
-        }
-        .upgrade-item:hover { background: rgba(255,255,255,0.05); border-color: var(--purple); }
-        
-        .upgrade-icon { font-size: 2.5rem; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); }
-        .upgrade-info { flex: 1; }
-        .upgrade-name { font-weight: bold; font-size: 1.1rem; }
-        .upgrade-desc { font-size: 0.85rem; color: var(--green); opacity: 0.9; }
-        
-        .buy-btn {
-            background: var(--pink);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 12px;
-            font-weight: bold;
+            margin-top: 25px;
             cursor: pointer;
-            transition: transform 0.1s, background 0.2s, box-shadow 0.2s;
+            padding: 10px;
+        }
+
+        /* === ПРАВАЯ ПАНЕЛЬ (МАГАЗИН И ТОП) === */
+        .side-panel {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            min-width: 90px;
-            box-shadow: 0 4px 15px rgba(255, 121, 198, 0.3);
+            gap: 20px;
+            min-width: 300px;
         }
-        
-        .buy-btn:active:not(:disabled) { transform: scale(0.9); }
-        .buy-btn:hover:not(:disabled) { background: #ff8ad0; box-shadow: 0 6px 20px rgba(255, 121, 198, 0.6); }
-        .buy-btn:disabled { background: #444; color: #888; box-shadow: none; cursor: not-allowed; opacity: 0.7; }
-        
-        .buy-btn .cost { font-size: 1rem; }
-        .buy-btn .lvl { font-size: 0.75rem; opacity: 0.9; background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 6px; margin-top: 3px; }
 
-        /* Эффект покупки */
-        @keyframes buyPop { 0% { transform: scale(1); background: white; } 50% { transform: scale(1.05); background: var(--green); } 100% { transform: scale(1); } }
-        .pop-anim { animation: buyPop 0.3s ease; }
+        h2 {
+            font-size: 1.3rem;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
 
-        /* Таблица лидеров */
-        .lb-row { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); gap: 10px; transition: 0.3s; }
-        .lb-row:last-child { border-bottom: none; }
-        .lb-row:hover { background: rgba(255,255,255,0.05); transform: translateX(5px); }
+        .shop-item {
+            display: flex;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .shop-icon { font-size: 2rem; margin-right: 15px; }
+        .shop-info { flex: 1; }
+        .shop-name { font-weight: bold; }
+        .shop-desc { font-size: 0.8rem; color: #50fa7b; }
         
-        .lb-row.me { background: rgba(255, 121, 198, 0.15); border-radius: 10px; border: 1px solid rgba(255, 121, 198, 0.3); }
-        .lb-rank { width: 25px; color: #888; text-align: center; font-weight: bold; }
-        .lb-name { flex: 1; font-weight: 600; }
-        .lb-score { color: var(--green); font-family: monospace; font-size: 1.2rem; font-weight: bold; }
+        .buy-btn {
+            background: #ff79c6;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            min-width: 80px;
+            text-align: center;
+        }
+        .buy-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
+        .buy-btn span { display: block; font-size: 0.75rem; font-weight: normal; }
 
-        /* Всплывающие частицы */
+        .lb-row {
+            display: flex;
+            padding: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            align-items: center;
+        }
+        .lb-row.me { background: rgba(255,121,198,0.2); border-radius: 8px; font-weight: bold; }
+        .lb-rank { width: 30px; color: #aaa; }
+        .lb-name { flex: 1; }
+        .lb-score { color: #50fa7b; font-family: monospace; font-size: 1.1rem; }
+
+        /* === ЭФФЕКТЫ === */
         .particle {
             position: fixed;
             pointer-events: none;
-            font-weight: 900;
-            color: var(--pink);
             font-size: 1.5rem;
-            animation: floatAndRotate 0.8s ease-out forwards;
-            z-index: 9999;
-            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+            color: #ff79c6;
+            font-weight: bold;
+            animation: floatUp 0.8s ease-out forwards;
+            z-index: 1000;
         }
-
-        @keyframes floatAndRotate {
-            0% { transform: translate(-50%, -50%) scale(0.5) rotate(-20deg); opacity: 1; }
-            50% { transform: translate(-50%, -80px) scale(1.2) rotate(10deg); opacity: 1; }
-            100% { transform: translate(-50%, -120px) scale(1) rotate(20deg); opacity: 0; }
-        }
-
-        /* Адаптивность */
-        @media (max-width: 850px) {
-            .container { grid-template-columns: 1fr; padding-top: 70px; }
-            .header h1 { font-size: 2.2rem; }
-            .clicker-btn { width: 170px; height: 170px; font-size: 5rem; }
-            .click-wrapper { width: 200px; height: 200px; }
-            #score { font-size: 3.5rem; }
+        @keyframes floatUp {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            100% { transform: translate(-50%, -100px) scale(1.5); opacity: 0; }
         }
     </style>
 </head>
 <body>
 
-<div class="lang-switcher">
-    <button class="lang-btn active" id="lang-ru" onclick="changeLang('ru')">RU</button>
-    <button class="lang-btn" id="lang-en" onclick="changeLang('en')">EN</button>
-    <button class="lang-btn" id="lang-es" onclick="changeLang('es')">ES</button>
-</div>
+    <div class="top-bar">
+        <button class="lang-btn" id="lang-ru" onclick="setLang('ru')">RU</button>
+        <button class="lang-btn" id="lang-en" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" id="lang-es" onclick="setLang('es')">ES</button>
+    </div>
 
-<div id="bg-bubbles"></div>
-
-<div class="container">
-    <div class="glass-panel game-section">
-        <div class="header">
+    <div class="main-container">
+        
+        <div class="panel game-panel">
             <h1>Aurora Nova</h1>
-            <div class="level-badge"><span id="t-lvl">Уровень:</span> <span id="lvl-display">1</span></div>
+            <div class="level-box"><span id="txt-lvl">Уровень</span>: <span id="ui-lvl">1</span></div>
+            
+            <div class="score-box">
+                <div id="score">0</div>
+                <div style="color: #aaa; font-size: 0.9rem;" id="txt-collected">UwU собрано</div>
+                <div id="bps">0 <span id="txt-sec">UwU/сек</span></div>
+            </div>
+
+            <button class="main-btn" id="click-btn">🐾</button>
+
+            <button class="reset-btn" id="txt-reset" onclick="hardReset()">Сбросить прогресс</button>
         </div>
 
-        <div class="score-display">
-            <div id="score">0</div>
-            <div class="text-muted" id="t-collected">UwU собрано</div>
-            <div id="bps">0 <span id="t-persec">UwU / сек</span></div>
+        <div class="panel side-panel">
+            <div>
+                <h2 id="txt-shop">🛒 Магазин</h2>
+                <div id="shop-list"></div>
+            </div>
+
+            <div>
+                <h2 id="txt-top">🏆 Топ Суетологов</h2>
+                <div id="leaderboard"></div>
+            </div>
         </div>
 
-        <div class="click-wrapper">
-            <div class="click-halo"></div>
-            <div class="clicker-btn" id="main-btn">🐾</div>
-        </div>
-
-        <button class="reset-btn" id="t-reset" onclick="hardReset()">Сбросить прогресс</button>
     </div>
-
-    <div class="sidebar">
-        <div class="glass-panel">
-            <h2 id="t-shop">🛒 Магазин</h2>
-            <div id="shop-container"></div>
-        </div>
-
-        <div class="glass-panel">
-            <h2 id="t-top">🏆 Топ Суетологов</h2>
-            <div id="lb-container"></div>
-        </div>
-    </div>
-</div>
 
 <script>
-    // --- СЛОВАРЬ ПЕРЕВОДОВ ---
+    // === 1. СЛОВАРЬ (ЯЗЫКИ) ===
     const i18n = {
         ru: {
-            lvl: "Уровень:",
-            collected: "UwU собрано",
-            perSec: "UwU / сек",
-            reset: "Сбросить прогресс",
-            shop: "🛒 Магазин",
-            top: "🏆 Топ Суетологов",
-            me: "Ты (Игрок)",
-            confirm: "Точно сбросить весь прогресс?",
-            upgrades: {
-                1: { name: "Лисичка", desc: "+1 UwU/сек" },
-                2: { name: "Энергетик", desc: "+10 UwU/сек" },
-                3: { name: "Завод Суеты", desc: "+100 UwU/сек" },
-                4: { name: "Кибер-Лапа", desc: "+1000 UwU/сек" }
-            },
-            bots: ["Альфа Волк", "ОуО Мастер", "Енот-Вор", "Ленивый Кот"]
+            lvl: "Уровень", col: "UwU собрано", sec: "UwU/сек", reset: "Сбросить прогресс",
+            shop: "🛒 Магазин", top: "🏆 Топ Игроков", me: "Ты",
+            u1: "Лисичка", u2: "Энергетик", u3: "Завод", u4: "Кибер-Лапа",
+            d1: "+1 UwU/с", d2: "+10 UwU/с", d3: "+100 UwU/с", d4: "+1000 UwU/с"
         },
         en: {
-            lvl: "Level:",
-            collected: "UwU Collected",
-            perSec: "UwU / sec",
-            reset: "Reset Progress",
-            shop: "🛒 Shop",
-            top: "🏆 Leaderboard",
-            me: "You (Player)",
-            confirm: "Are you sure you want to reset all progress?",
-            upgrades: {
-                1: { name: "Little Fox", desc: "+1 UwU/sec" },
-                2: { name: "Energy Drink", desc: "+10 UwU/sec" },
-                3: { name: "UwU Factory", desc: "+100 UwU/sec" },
-                4: { name: "Cyber-Paw", desc: "+1000 UwU/sec" }
-            },
-            bots: ["Alpha Wolf", "OwO Master", "Thief Raccoon", "Lazy Cat"]
+            lvl: "Level", col: "UwU Collected", sec: "UwU/sec", reset: "Reset Progress",
+            shop: "🛒 Shop", top: "🏆 Leaderboard", me: "You",
+            u1: "Fox", u2: "Energy Drink", u3: "Factory", u4: "Cyber-Paw",
+            d1: "+1 UwU/s", d2: "+10 UwU/s", d3: "+100 UwU/s", d4: "+1000 UwU/s"
         },
         es: {
-            lvl: "Nivel:",
-            collected: "UwU Recolectado",
-            perSec: "UwU / seg",
-            reset: "Reiniciar Progreso",
-            shop: "🛒 Tienda",
-            top: "🏆 Clasificación",
-            me: "Tú (Jugador)",
-            confirm: "¿Estás seguro de que quieres restablecer todo?",
-            upgrades: {
-                1: { name: "Zorrito", desc: "+1 UwU/seg" },
-                2: { name: "Bebida Energética", desc: "+10 UwU/seg" },
-                3: { name: "Fábrica UwU", desc: "+100 UwU/seg" },
-                4: { name: "Ciber-Pata", desc: "+1000 UwU/seg" }
-            },
-            bots: ["Lobo Alfa", "Maestro OwO", "Mapache Ladrón", "Gato Perezoso"]
+            lvl: "Nivel", col: "UwU Recolectado", sec: "UwU/seg", reset: "Reiniciar",
+            shop: "🛒 Tienda", top: "🏆 Clasificación", me: "Tú",
+            u1: "Zorro", u2: "Bebida", u3: "Fábrica", u4: "Ciber-Pata",
+            d1: "+1 UwU/s", d2: "+10 UwU/s", d3: "+100 UwU/s", d4: "+1000 UwU/s"
         }
     };
 
-    let currentLang = localStorage.getItem('uwuLang') || 'ru';
+    // Проверяем сохраненный язык (защита от ошибок)
+    let validLangs = ['ru', 'en', 'es'];
+    let savedLang = localStorage.getItem('uwuLangSafe');
+    let currentLang = validLangs.includes(savedLang) ? savedLang : 'ru';
 
-    // --- СОСТОЯНИЕ ИГРЫ ---
+    // === 2. БАЗА ДАННЫХ ИГРЫ ===
+    const upgradesDB = [
+        { id: 1, icon: '🦊', basePrice: 15, bps: 1, nameKey: 'u1', descKey: 'd1' },
+        { id: 2, icon: '⚡', basePrice: 150, bps: 10, nameKey: 'u2', descKey: 'd2' },
+        { id: 3, icon: '🏭', basePrice: 1500, bps: 100, nameKey: 'u3', descKey: 'd3' },
+        { id: 4, icon: '🤖', basePrice: 20000, bps: 1000, nameKey: 'u4', descKey: 'd4' }
+    ];
+
     let state = {
         score: 0,
-        bps: 0,
-        counts: { 1: 0, 2: 0, 3: 0, 4: 0 }, // Сохраняем только количество покупок
+        counts: { 1: 0, 2: 0, 3: 0, 4: 0 },
         botScores: [50000, 10000, 2000, 500]
     };
 
-    // Базовые данные апгрейдов и ботов (не меняются)
-    const upgradeBase = {
-        1: { icon: '🦊', basePrice: 15, bps: 1 },
-        2: { icon: '⚡', basePrice: 150, bps: 10 },
-        3: { icon: '🏭', basePrice: 1500, bps: 100 },
-        4: { icon: '🤖', basePrice: 20000, bps: 1000 }
-    };
-    const botPower = [100, 25, 10, 2];
-
-    const btn = document.getElementById('main-btn');
-    const scoreEl = document.getElementById('score');
-    const bpsEl = document.getElementById('bps');
-    const lvlEl = document.getElementById('lvl-display');
-    const shopContainer = document.getElementById('shop-container');
-    const lbContainer = document.getElementById('lb-container');
-
-    // --- ФОНОВЫЕ ПУЗЫРЬКИ ---
-    function createBgBubbles() {
-        const container = document.getElementById('bg-bubbles');
-        for (let i = 0; i < 15; i++) {
-            let b = document.createElement('div');
-            b.className = 'bg-bubble';
-            b.style.left = Math.random() * 100 + 'vw';
-            b.style.width = b.style.height = (Math.random() * 40 + 10) + 'px';
-            b.style.animationDuration = (Math.random() * 10 + 5) + 's';
-            b.style.animationDelay = (Math.random() * 5) + 's';
-            container.appendChild(b);
-        }
+    // Высчитываем BPS на основе покупок
+    function getCalculatedBps() {
+        let total = 0;
+        upgradesDB.forEach(u => { total += u.bps * state.counts[u.id]; });
+        return total;
     }
 
-    // --- СМЕНА ЯЗЫКА ---
-    function changeLang(lang) {
-        currentLang = lang;
-        localStorage.setItem('uwuLang', lang);
-        
-        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(`lang-${lang}`).classList.add('active');
-
-        // Обновляем статические тексты
-        document.getElementById('t-lvl').innerText = i18n[lang].lvl;
-        document.getElementById('t-collected').innerText = i18n[lang].collected;
-        document.getElementById('t-persec').innerText = i18n[lang].perSec;
-        document.getElementById('t-reset').innerText = i18n[lang].reset;
-        document.getElementById('t-shop').innerText = i18n[lang].shop;
-        document.getElementById('t-top').innerText = i18n[lang].top;
-
-        renderShop();
-        renderLeaderboard();
+    // Высчитываем цену
+    function getPrice(id) {
+        let base = upgradesDB.find(u => u.id === id).basePrice;
+        return Math.floor(base * Math.pow(1.15, state.counts[id]));
     }
 
-    // --- ЛОГИКА ---
+    // === 3. СОХРАНЕНИЕ И ЗАГРУЗКА (СУПЕРБЕЗОПАСНАЯ) ===
     function loadGame() {
-        const saved = localStorage.getItem('uwuNovaSaveData');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            state.score = parsed.score || 0;
-            state.bps = parsed.bps || 0;
-            state.counts = parsed.counts || { 1: 0, 2: 0, 3: 0, 4: 0 };
-            state.botScores = parsed.botScores || [50000, 10000, 2000, 500];
+        try {
+            let saved = localStorage.getItem('uwuSafeSave_v2');
+            if (saved) {
+                let parsed = JSON.parse(saved);
+                // Проверяем, что сохранение не битое
+                if (typeof parsed.score === 'number' && parsed.counts) {
+                    state.score = parsed.score;
+                    state.counts = Object.assign(state.counts, parsed.counts);
+                    if (parsed.botScores) state.botScores = parsed.botScores;
+                }
+            }
+        } catch (e) {
+            console.log("Сохранение было сломано, начинаем заново.");
+            localStorage.removeItem('uwuSafeSave_v2');
         }
-        changeLang(currentLang);
-        createBgBubbles();
     }
 
-    function saveGame() { localStorage.setItem('uwuNovaSaveData', JSON.stringify(state)); }
+    function saveGame() {
+        try { localStorage.setItem('uwuSafeSave_v2', JSON.stringify(state)); } catch (e) {}
+    }
 
     function hardReset() {
-        if(confirm(i18n[currentLang].confirm)) {
-            localStorage.removeItem('uwuNovaSaveData');
+        if (confirm("Точно удалить всё? / Are you sure?")) {
+            localStorage.removeItem('uwuSafeSave_v2');
             location.reload();
         }
     }
 
-    function getPrice(id) {
-        return Math.floor(upgradeBase[id].basePrice * Math.pow(1.15, state.counts[id]));
-    }
-
-    function buy(id, btnElement) {
-        const price = getPrice(id);
-        if (state.score >= price) {
-            state.score -= price;
-            state.counts[id]++;
-            state.bps += upgradeBase[id].bps;
-            
-            // Анимация успешной покупки
-            btnElement.parentElement.classList.add('pop-anim');
-            setTimeout(() => btnElement.parentElement.classList.remove('pop-anim'), 300);
-
-            saveGame();
-            updateUI();
-            renderShop();
-        }
-    }
-
-    // --- ОТРИСОВКА ---
+    // === 4. ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ===
     function updateUI() {
-        scoreEl.innerText = Math.floor(state.score).toLocaleString();
-        
-        // Анимация дергания счета при клике
-        scoreEl.style.transform = 'scale(1.1)';
-        setTimeout(() => scoreEl.style.transform = 'scale(1)', 50);
+        document.getElementById('score').innerText = Math.floor(state.score).toLocaleString();
+        document.getElementById('bps').innerHTML = `${getCalculatedBps().toLocaleString()} <span id="txt-sec">${i18n[currentLang].sec}</span>`;
+        document.getElementById('ui-lvl').innerText = Math.max(1, Math.floor(Math.log10(state.score + 1)) + 1);
 
-        bpsEl.innerHTML = `${state.bps.toLocaleString()} <span id="t-persec" class="text-muted">${i18n[currentLang].perSec}</span>`;
-        lvlEl.innerText = Math.max(1, Math.floor(Math.log10(state.score + 1)) + 1);
-
-        // Обновляем доступность кнопок
-        [1, 2, 3, 4].forEach(id => {
-            const btn = document.getElementById(`buy-btn-${id}`);
-            if (btn) btn.disabled = state.score < getPrice(id);
+        // Обновляем кнопки в магазине
+        upgradesDB.forEach(u => {
+            let btn = document.getElementById(`buy-${u.id}`);
+            if (btn) btn.disabled = state.score < getPrice(u.id);
         });
     }
 
     function renderShop() {
-        shopContainer.innerHTML = '';
-        [1, 2, 3, 4].forEach(id => {
-            const price = getPrice(id);
-            const data = i18n[currentLang].upgrades[id];
-            const base = upgradeBase[id];
-            
-            shopContainer.innerHTML += `
-                <div class="upgrade-item" id="upg-item-${id}">
-                    <div class="upgrade-icon">${base.icon}</div>
-                    <div class="upgrade-info">
-                        <div class="upgrade-name">${data.name}</div>
-                        <div class="upgrade-desc">${data.desc}</div>
+        let html = '';
+        upgradesDB.forEach(u => {
+            let price = getPrice(u.id);
+            html += `
+                <div class="shop-item">
+                    <div class="shop-icon">${u.icon}</div>
+                    <div class="shop-info">
+                        <div class="shop-name">${i18n[currentLang][u.nameKey]}</div>
+                        <div class="shop-desc">${i18n[currentLang][u.descKey]}</div>
                     </div>
-                    <button id="buy-btn-${id}" class="buy-btn" onclick="buy(${id}, this)" ${state.score < price ? 'disabled' : ''}>
-                        <span class="cost">${price.toLocaleString()}</span>
-                        <span class="lvl">LVL ${state.counts[id]}</span>
+                    <button class="buy-btn" id="buy-${u.id}" onclick="buyItem(${u.id})">
+                        ${price.toLocaleString()} UwU
+                        <span>ЛВЛ ${state.counts[u.id]}</span>
                     </button>
                 </div>
             `;
         });
+        document.getElementById('shop-list').innerHTML = html;
+        updateUI(); // Применяем доступность кнопок
     }
 
     function renderLeaderboard() {
-        let players = state.bot
+        let botsNames = ["Bot Alpha", "Bot OwO", "Bot Pro", "Bot Noob"];
+        let players = state.botScores.map((s, i) => ({ name: botsNames[i], score: s, isMe: false }));
+        players.push({ name: i18n[currentLang].me, score: state.score, isMe: true });
+        
+        players.sort((a, b) => b.score - a.score);
+        
+        let html = '';
+        players.slice(0, 5).forEach((p, i) => {
+            html += `
+                <div class="lb-row ${p.isMe ? 'me' : ''}">
+                    <div class="lb-rank">#${i + 1}</div>
+                    <div class="lb-name">${p.name}</div>
+                    <div class="lb-score">${Math.floor(p.score).toLocaleString()}</div>
+                </div>
+            `;
+        });
+        document.getElementById('leaderboard').innerHTML = html;
+    }
+
+    // === 5. ИГРОВЫЕ ДЕЙСТВИЯ ===
+    function setLang(lang) {
+        currentLang = lang;
+        localStorage.setItem('uwuLangSafe', lang);
+        
+        // Подсвечиваем кнопку
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`lang-${lang}`).classList.add('active');
+
+        // Меняем статические тексты
+        document.getElementById('txt-lvl').innerText = i18n[lang].lvl;
+        document.getElementById('txt-collected').innerText = i18n[lang].col;
+        document.getElementById('txt-reset').innerText = i18n[lang].reset;
+        document.getElementById('txt-shop').innerText = i18n[lang].shop;
+        document.getElementById('txt-top').innerText = i18n[lang].top;
+
+        renderShop();
+        renderLeaderboard();
+        updateUI();
+    }
+
+    function buyItem(id) {
+        let price = getPrice(id);
+        if (state.score >= price) {
+            state.score -= price;
+            state.counts[id]++;
+            saveGame();
+            renderShop();
+        }
+    }
+
+    // Клик по главной кнопке (используем стандартные события для 100% совместимости)
+    const clickBtn = document.getElementById('click-btn');
+    
+    function handleTap(e) {
+        state.score++;
+        updateUI();
+        
+        // Эффект вылетающих частиц
+        let x = e.clientX || (e.touches && e.touches[0].clientX) || window.innerWidth / 2;
+        let y = e.clientY || (e.touches && e.touches[0].clientY) || window.innerHeight / 2;
+        
+        let p = document.createElement('div');
+        p.className = 'particle';
+        p.innerText = ["UwU", "🐾", "✨"][Math.floor(Math.random() * 3)];
+        p.style.left = x + 'px';
+        p.style.top = y + 'px';
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 800);
+
+        // Меняем мордочку
+        if(Math.random() > 0.8) {
+            clickBtn.innerText = ["🐾", "🦊", "🐺", "🐶"][Math.floor(Math.random() * 4)];
+        }
+    }
+
+    // Привязываем и клик, и тач (с защитой от двойного срабатывания)
+    clickBtn.addEventListener('mousedown', (e) => handleTap(e));
+    clickBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handleTap(e); }, {passive: false});
+
+    // === 6. ЦИКЛЫ ===
+    // Автокликер (10 раз в сек)
+    setInterval(() => {
+        let bps = getCalculatedBps();
+        if (bps > 0) {
+            state.score += bps / 10;
+            updateUI();
+        }
+    }, 100);
+
+    // Боты и сохранение (1 раз в сек)
+    setInterval(() => {
+        let powers = [100, 25, 10, 2];
+        for(let i=0; i<4; i++) {
+            state.botScores[i] += powers[i] + Math.random() * powers[i];
+        }
+        renderLeaderboard();
+        saveGame();
+    }, 1000);
+
+    // === 7. ЗАПУСК ===
+    loadGame();
+    setLang(currentLang); // Запустит первичную отрисовку всего
+
+</script>
+</body>
+</html>
